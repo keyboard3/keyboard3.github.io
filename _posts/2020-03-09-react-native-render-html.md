@@ -2,15 +2,13 @@
 layout: post
 title: "react native render html 简单解析"
 date: 2020-03-09
+Author: keyboard3
+categories: 
+tags: [react-native,html]
+comments: true
 ---
 
 # [react-native-render-html](https://github.com/archriss/react-native-render-html)
-## 目录
-- [场景](#场景)
-- [简单推测处理过程](#简单推测处理过程)
-- [源码流程梳理](#源码流程梳理)
-- [官方文档翻译](#官方文档翻译)
-
 ## 场景
 
 需要将html的UI渲染标准迁移到react-native的跨平台组件上
