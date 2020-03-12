@@ -106,7 +106,7 @@ theme: hexo-theme-matery
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: https://github.com/keyboard3/blog
+  repository: https://github.com/keyboard3/blog.git
   branch: master
 
 # 内容搜索
