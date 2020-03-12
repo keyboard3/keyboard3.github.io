@@ -1,7 +1,7 @@
 language: node_js
 
 node_js:
- - lts/*
+ - "10"
 
 install:
  - npm install -g hexo-cli
@@ -10,7 +10,6 @@ install:
 script:
  - hexo clean
  - hexo generate
-
 # deploy:
 #  provider: pages
 #  skip_cleanup: true
