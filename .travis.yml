@@ -18,12 +18,13 @@ install:
 script:
  - hexo clean
  - hexo generate
-# deploy:
-#  provider: pages
-#  skip_cleanup: true
-#  keep_history: true
-#  local_dir: dist
-#  target_branch: master
-#  on:
-#   branch: gh-pages
-#  github_token: $GITHUB_TOKEN
+ 
+deploy:
+ provider: pages
+ skip_cleanup: true
+ keep_history: true
+ local_dir: dist
+ target_branch: master
+ on:
+  branch: gh-pages
+ github_token: $GITHUB_TOKEN
