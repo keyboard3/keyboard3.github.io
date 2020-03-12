@@ -10,8 +10,6 @@ install:
 script:
  - hexo clean
  - hexo generate
- 
-cache: yarn
 
 # deploy:
 #  provider: pages
