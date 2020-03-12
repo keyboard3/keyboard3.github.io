@@ -56,7 +56,8 @@ html | 需要渲染的html文本| string | 必须
 uri | 网址内容的解析和渲染（实验中）| string | 可选 
 decodeEntities | 这个是html parse2的参数，(大意是文档中的实体也会被解析?) | bool | 默认是true
 imagesMaxWidth | 调整图片到最大宽度 | number | 可选
-staticContentMaxWidth | 设置非响应式内容的最大宽度(iframe实例)（ps：得验证）| number | 可选imagesIntitialDimensions | 图片的默认显示的宽高{width:100,height:100} | 可选
+staticContentMaxWidth | 设置非响应式内容的最大宽度(iframe实例)（ps：得验证）| number | 可选
+imagesInitialDimensions | 图片的默认显示的宽高{width:100,height:100}|number | 可选
 onLinkPress | 随着点击事件触发，url和标签属性对象将作为回调函数的参数 | function | 可选
 onParsed | 当html内容被解析完成时触发，对调整渲染后续过程有帮助 | function | 可选
 tagsStyles | 可以指定html标签的显示的rn style | object | 可选
@@ -68,3 +69,13 @@ remoteLoadingView | 替换默认加载网络内容的加载框 | function | 可�
 emSize | 1em对应的像素值 | number | 14 
 ptSize | 1pt对应的像素值 | number | 1.3
 baseFontStyleText | 组件的默认样式 | object | {fontSize:14}
+allowFontScaling | 允许字体大小被缩放的开关 | boolean | true
+textSelectable | 允许所有文本被选中 | boolean | false
+alterData | 指定文本改变目标节点的内容 | function | 可选
+alterChildren | 修改目标的节点的children | function | 可选
+alterNode | 修改目标节点 | function | 可选
+ignoreTags | 指定不想渲染的html标签 | array | 可选
+allowStyles | 它只渲染给定的style，如果这个style也在ignoreStyles下，则还是忽略 | array | 可选 (应该是background这类样式属性)
+ignoredStyles | 不想渲染的style | array | 可选
+ignoreNodesFunction | 忽略给定节点 | function | 可选
+debug | 打印htmlparser2的解析result,渲染的结果 | boolean | false

@@ -1,5 +1,5 @@
 {
-  "name": "hexo-site",
+  "name": "blog",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -34,7 +34,8 @@
   },
   "main": "index.js",
   "devDependencies": {},
-  "author": "",
+  "author": "keyboard3 <keyboard3@icloud.com>",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "repository": "git@github.com:keyboard3/blog.git"
 }
