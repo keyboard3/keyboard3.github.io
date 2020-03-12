@@ -1,26 +1,27 @@
+# 指定语言环境
 language: node_js
 
+# 指定node_js版本
 node_js:
- - lts/*
+ - "10"
 
 branches:
  only:
   - gh-pages
 
+# 指定博客源码分支，因人而异。hexo博客源码托管在独立repo则不用设置此项
+before_install:
+ - git config user.name "keyboard3"
+ - git config user.email "keyboard3@icloud.com"
+ - sed -i'' "s~https://github.com/keyboard3/blog.git~https://${GITHUB_TOKEN}@github.com/keyboard3/blog.git~" _config.yml
+
+# Start: Build Lifecycle
 install:
- - yarn
+ - npm install -g hexo-cli
+ - npm install
 
+# 执行清缓存，生成网页操作
 script:
- - yarn build
- 
-cache: yarn
-
-deploy:
- provider: pages
- skip_cleanup: true
- keep_history: true
- local_dir: dist
- target_branch: master
- on:
-  branch: gh-pages
- github_token: $GITHUB_TOKEN
+ - hexo clean
+ - hexo generate
+ - npm run deploy
