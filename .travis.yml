@@ -8,12 +8,3 @@ install:
 script:
 - yarn build
 cache: yarn
-deploy:
-  provider: pages
-  skip-cleanup: true
-  keep-history: true
-  local-dir: dist
-  target_branch: master
-  on:
-    branch: gh-pages
-  github-token: $GITHUB_TOKEN
