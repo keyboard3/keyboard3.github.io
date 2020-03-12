@@ -1,24 +1,20 @@
-# 指定语言环境
 language: node_js
 
-# 指定node_js版本
 node_js:
- - "10"
+ - lts/*
 
 branches:
  only:
   - gh-pages
 
-# Start: Build Lifecycle
 install:
- - npm install -g hexo-cli
- - npm install
+ - yarn
 
-# 执行清缓存，生成网页操作
 script:
- - hexo clean
- - hexo generate
+ - yarn build
  
+cache: yarn
+
 deploy:
  provider: pages
  skip_cleanup: true
