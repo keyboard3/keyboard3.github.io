@@ -1,0 +1,134 @@
+---
+title: react-native-FlatFist
+top: false
+cover: false
+toc: true
+mathjax: true
+date: 2020-03-14 18:05:38
+password:
+summary:
+tags: [react-native,翻译]
+categories:
+---
+# [FlatList](https://reactnative.dev/docs/flatlist)
+一个高性能用于渲染基础列表，支持一些便利的特性
+本文纯粹为了看FlatList英文文档顺便翻译的。其实感觉[FlatList中文版](https://reactnative.cn/docs/flatlist/)比英文原版都好。
+ - 跨平台支持
+ - 可选的横向展示
+ - 可配置的已显示的回调函数
+ - 列表头支持
+ - 列表尾支持
+ - 分割线支持
+ - 下拉刷新
+ - 滚动加载
+ - 滚动到指定行支持
+ - 多列支持
+
+如果需要section支持，请使用[Section List](https://reactnative.dev/docs/sectionlist)
+[flatlist-simple](https://snack.expo.io/?session_id=snack-session-fXpTgLMiC&preview=true&platform=web&iframeId=j4bavelnge&supportedPlatforms=ios,android,web&name=flatlist-simple&description=Example%20usage&waitForData=true)
+为了渲染多列，请使用[numColumns](https://reactnative.dev/docs/flatlist#numcolumns)属性，用这种方式代替flexWrap布局解决单行高度的冲突
+
+下面的复杂的多列显示使用案例演示了如何性能优化和避免bug
+
+ - 通过传`extraData={selected}`给`FlatList`,可以保证state变更时`FlatList`被重渲染。没有设置这个属性,`FlatList`将不会知道需要重渲染任何item，因为它是个`PureComponent`对比属性发现没有任何改变。
+ - `keyExtractor`告诉列表使用id来作为每项的key
+
+[flatlist-selectable
+](https://snack.expo.io/?session_id=snack-session-IO5CwSQUH&preview=true&platform=web&iframeId=rua5k99frl&supportedPlatforms=ios,android,web&name=flatlist-selectable&description=Example%20usage&waitForData=true)
+它是对[virtualizedlist](https://reactnative.dev/docs/virtualizedlist)封装，继承自它的所有属性（同样也继承自[ScrollView](https://reactnative.dev/docs/scrollview)),这些继承的属性在这里没有列出来。此外还有以下注意事项：
+ 
+ - 当内容滚动出可视的渲染窗口，滚出部分的状态将丢弃。保证每项的数据被外部存储保存，如Flux,Redux以及Relay.
+ - 它是`PureComponent`意味着，如果`props`数据内容`浅对比`相等这不会重新渲染。保证`renderItem`函数依赖传入参数`data`以及父组件状态（`extraData`），否则不会刷新
+ - 为了优化内存的同时保持平滑滚动，内容被异步离屏渲染。这意味着可能滑动速度可能大于内容的填充速度，会看到短暂的白屏。这是优化而不得不做出的妥协，每个应用可以根据自己的需要来调整对应的参数，我们仍然在这方面的优化做努力。
+ - 默认列表会将item数据项的`key`属性作为单项组件的React key。另外，你可以提供自定义函数`keyExtractor`来获取key
+
+ ## 参考
+ ### Props
+ 继承自[ScrollView Props](https://reactnative.dev/docs/scrollview#props)，当组件被嵌套在同方向的FlastList下这些属性将无效。
+ ### renderItem
+ ```
+ renderItem({item, index, separators});
+ ```
+ 从`data`数据中获取item数据，将它渲染到列表上
+ 提供一起其他参数，比如可能需要的`index`参数，还有后面的`separators`。
+ **separators**
+  - highlight (Function)
+  - unhighlight (Function)
+  - updateProps (Function)
+    - select (enum('leading', 'trailing'))
+    - newProps (Object)
+
+ ### data
+ 为了简单，data是个纯数组。如果你想要使用其他数据结构，比如不可变数组，请直接使用[virtualizedlist](https://reactnative.dev/docs/virtualizedlist)
+
+ ### ItemSeparatorComponent
+ 在每两项之间渲染一个，默认会给组件提供`highlighted`,`leadingItem`属性。`renderItem`提供属性`separators.highlight`/`unhighlight`来更新它的`highlighted`属性。你也可以通过`separators.updateProps`添加自定义属性给它
+ ### ListEmptyComponent
+当列表内容是空的时候渲染它，可以是component, function, element
+ ### ListFooterComponent
+在所有列表元素底部，可以是component, function, element
+ ### ListFooterComponentStyle
+为内部的`ListFooterComponent`提供样式
+ ### ListHeaderComponent
+ 在所有列表元素顶部，可以是component, function, element
+ ### ListHeaderComponentStyle
+ 为内部的`ListHeaderComponent`提供样式
+ ### columnWrapperStyle
+ 为多列的列项提供包裹样式
+ ### extraData
+ 告诉列表需要重绘的标记样式（因为列表是`PureComponent`）。`renderItem`, Header, Footer依赖除了`data`以外的任何内容，变更都需要告知`extraData`，要将它作为不可变对象看待。
+ ### getItemLayout
+ 这是一个可选的优化项，如果你提前知道单项的固定宽高可以跳过组件进行的动态布局计算。
+ 利用它在上百项下有很难高的性能。
+ 如果你指定了分割线，高度计算需要包括分隔线进去
+ ### horizontal
+ 会将item从竖着堆叠变成横着摆放
+ ### initialNumToRender
+ 指定首屏需要有多少元素被渲染，应该刚好填充满屏幕。注意这些元素在窗口滚动过程中不会卸载，为了在提高执行`scroll-to-top`操作时不需要重新渲染。
+ ### initialScrollIndex
+ 首次渲染不从顶部的第一项开始，取而代之的是`initialScrollIndex`开始。它会禁止掉`initialNumToRender`的优化的项目放在内容中，立刻从initial index开始的位置渲染。需要设置`getItemLayout`属性
+ ### inverted
+ 翻转滚动的方向（应该是下滑变成上拉吧），实质是将`scale`设置成-1
+ ### keyExtractor
+ 用来提取item下独一无二的key，key作为重绘时缓存的依据。默认是取item.key，获取失败会回滚到index，机制和React一样
+ ### numColumns
+ 多列的数量，表现像flexWrap的z布局。所有的item一样高，`masonry`瀑布流布局不支持
+ ### onEndReached
+```
+(info: {distanceFromEnd: number}) => void 
+```
+当滚动的位置在渲染内容的触摸区内就会调用
+ ### onEndReachedThreshold
+距离列表底部多远时触发`onEndReached`回调，这是一个比值。比如0.5距离底部为可见内容一半长度时触发
+ ### onRefresh
+ 如果提供，一个平台标准的组件就会被添加到`下拉刷新`功能上。保证`refreshing`属性被正确设置
+ ### onViewableItemsChanged
+ ```
+ (info: {
+    viewableItems: array,
+    changed: array,
+  }) => void
+ ```
+ 可见行变化时被调用。可见范围和变化频次可以去设置`viewabilityConfig`
+ ### progressViewOffset
+ 当偏移的位置需要加上加载指示器，可以去设置。(Android)
+ ### legacyImplementation
+可能没有实现，仅在调试和性能对比时需要
+ > May not have full feature parity and is meant for debugging and performance comparison.
+ ### refreshing
+等待新数据刷新的状态为true
+ ### removeClippedSubviews
+ 在大列表时可能会提高滚动性能
+ > 有bug，在某些场景下会导致内容丢失。谨慎使用
+ ### viewabilityConfig
+ 
+ ### viewabilityConfigCallbackPairs
+ ## Methods
+ ### scrollToEnd
+ ### scrollToIndex
+ ### scrollToItem
+ ### scrollToOffset
+ ### recordInteraction
+ ### flashScrollIndicators
+ ### getScrollResponder
+ ### getScrollableNode
