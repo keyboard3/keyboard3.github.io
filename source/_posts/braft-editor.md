@@ -12,6 +12,7 @@ categories:
 ---
 
 # [braft-editor](https://github.com/margox/braft-editor)
+# [官方文档](https://www.yuque.com/braft-editor/be/gz44tn#gug9gs)
 
 ## 场景
 
