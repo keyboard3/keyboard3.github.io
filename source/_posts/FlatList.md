@@ -1,5 +1,5 @@
 ---
-title: FlatFist
+title: FlatList
 top: false
 cover: false
 toc: true
