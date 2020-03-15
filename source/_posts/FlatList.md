@@ -1,5 +1,5 @@
 ---
-title: react-native-FlatFist
+title: FlatFist
 top: false
 cover: false
 toc: true
@@ -14,7 +14,7 @@ categories:
 # [FlatList](https://reactnative.dev/docs/flatlist)
 ## 介绍
 一个高性能用于渲染基础列表，支持一些便利的特性
-本文纯粹为了看FlatList英文文档顺便翻译的。其实感觉[FlatList中文版](https://reactnative.cn/docs/flatlist/)比英文原版都好。
+感觉[FlatList中文版](https://reactnative.cn/docs/flatlist/)比英文原版都好。
  - 跨平台支持
  - 可选的横向展示
  - 可配置的已显示的回调函数
@@ -25,6 +25,13 @@ categories:
  - 滚动加载
  - 滚动到指定行支持
  - 多列支持
+
+它是对[virtualizedlist](/blog/virtualizedlist)封装，继承自它的所有属性（同样也继承自[ScrollView](https://reactnative.dev/docs/scrollview)),这些继承的属性在这里没有列出来。此外还有以下注意事项：
+ 
+ - 当内容滚动出可视的渲染窗口，滚出部分的状态将丢弃。保证每项的数据被外部存储保存，如Flux,Redux以及Relay.
+ - 它是`PureComponent`意味着，如果`props`数据内容`浅对比`相等这不会重新渲染。保证`renderItem`函数依赖传入参数`data`以及父组件状态（`extraData`），否则不会刷新
+ - 为了优化内存的同时保持平滑滚动，内容被异步离屏渲染。这意味着可能滑动速度可能大于内容的填充速度，会看到短暂的白屏。这是优化而不得不做出的妥协，每个应用可以根据自己的需要来调整对应的参数，我们仍然在这方面的优化做努力。
+ - 默认列表会将item数据项的`key`属性作为单项组件的React key。另外，你可以提供自定义函数`keyExtractor`来获取key
 
 如果需要section支持，请使用[Section List](https://reactnative.dev/docs/sectionlist)
 [flatlist-simple](https://snack.expo.io/?session_id=snack-session-fXpTgLMiC&preview=true&platform=web&iframeId=j4bavelnge&supportedPlatforms=ios,android,web&name=flatlist-simple&description=Example%20usage&waitForData=true)
@@ -185,14 +192,6 @@ const styles = StyleSheet.create({
   },
 });
 ```
-
-它是对[virtualizedlist](https://reactnative.dev/docs/virtualizedlist)封装，继承自它的所有属性（同样也继承自[ScrollView](https://reactnative.dev/docs/scrollview)),这些继承的属性在这里没有列出来。此外还有以下注意事项：
- 
- - 当内容滚动出可视的渲染窗口，滚出部分的状态将丢弃。保证每项的数据被外部存储保存，如Flux,Redux以及Relay.
- - 它是`PureComponent`意味着，如果`props`数据内容`浅对比`相等这不会重新渲染。保证`renderItem`函数依赖传入参数`data`以及父组件状态（`extraData`），否则不会刷新
- - 为了优化内存的同时保持平滑滚动，内容被异步离屏渲染。这意味着可能滑动速度可能大于内容的填充速度，会看到短暂的白屏。这是优化而不得不做出的妥协，每个应用可以根据自己的需要来调整对应的参数，我们仍然在这方面的优化做努力。
- - 默认列表会将item数据项的`key`属性作为单项组件的React key。另外，你可以提供自定义函数`keyExtractor`来获取key
-
  
 ## Props
  继承自[ScrollView Props](https://reactnative.dev/docs/scrollview#props)，当组件被嵌套在同方向的FlastList下这些属性将无效。
@@ -211,7 +210,7 @@ const styles = StyleSheet.create({
     - newProps (Object)
 
 ### data
- 为了简单，data是个纯数组。如果你想要使用其他数据结构，比如不可变数组，请直接使用[virtualizedlist](https://reactnative.dev/docs/virtualizedlist)
+ 为了简单，data是个纯数组。如果你想要使用其他数据结构，比如不可变数组，请直接使用[virtualizedlist](/blog/virtualizedlist)
 
 ### ItemSeparatorComponent
  在每两项之间渲染一个，默认会给组件提供`highlighted`,`leadingItem`属性。`renderItem`提供属性`separators.highlight`/`unhighlight`来更新它的`highlighted`属性。你也可以通过`separators.updateProps`添加自定义属性给它
