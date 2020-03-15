@@ -10,7 +10,9 @@ summary:
 tags: [react-native,翻译]
 categories:
 ---
+
 # [FlatList](https://reactnative.dev/docs/flatlist)
+## 介绍
 一个高性能用于渲染基础列表，支持一些便利的特性
 本文纯粹为了看FlatList英文文档顺便翻译的。其实感觉[FlatList中文版](https://reactnative.cn/docs/flatlist/)比英文原版都好。
  - 跨平台支持
@@ -26,6 +28,64 @@ categories:
 
 如果需要section支持，请使用[Section List](https://reactnative.dev/docs/sectionlist)
 [flatlist-simple](https://snack.expo.io/?session_id=snack-session-fXpTgLMiC&preview=true&platform=web&iframeId=j4bavelnge&supportedPlatforms=ios,android,web&name=flatlist-simple&description=Example%20usage&waitForData=true)
+``` ts
+import React from 'react';
+import { SafeAreaView, View, FlatList, StyleSheet, Text } from 'react-native';
+import Constants from 'expo-constants';
+
+const DATA = [
+  {
+    id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
+    title: 'First Item',
+  },
+  {
+    id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
+    title: 'Second Item',
+  },
+  {
+    id: '58694a0f-3da1-471f-bd96-145571e29d72',
+    title: 'Third Item',
+  },
+];
+
+function Item({ title }) {
+  return (
+    <View style={styles.item}>
+      <Text style={styles.title}>{title}</Text>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={DATA}
+        ItemSeparatorComponent={ ({highlighted}) => (<Text >--</Text>  )}
+        renderItem={({ item,index, separators }) => <Text>
+        {item.title}{separators}</Text>}
+        keyExtractor={item => item.id}
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginTop: Constants.statusBarHeight,
+  },
+  item: {
+    backgroundColor: '#f9c2ff',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+  },
+  title: {
+    fontSize: 32,
+  },
+});
+```
 为了渲染多列，请使用[numColumns](https://reactnative.dev/docs/flatlist#numcolumns)属性，用这种方式代替flexWrap布局解决单行高度的冲突
 
 下面的复杂的多列显示使用案例演示了如何性能优化和避免bug
@@ -35,6 +95,97 @@ categories:
 
 [flatlist-selectable
 ](https://snack.expo.io/?session_id=snack-session-IO5CwSQUH&preview=true&platform=web&iframeId=rua5k99frl&supportedPlatforms=ios,android,web&name=flatlist-selectable&description=Example%20usage&waitForData=true)
+
+
+``` ts
+import React from 'react';
+import {
+  SafeAreaView,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  Text,
+} from 'react-native';
+import Constants from 'expo-constants';
+
+const DATA = [
+  {
+    id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
+    title: 'First Item',
+  },
+  {
+    id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
+    title: 'Second Item',
+  },
+  {
+    id: '58694a0f-3da1-471f-bd96-145571e29d72',
+    title: 'Third Item',
+  },
+];
+
+function Item({ id, title, selected, onSelect }) {
+  return (
+    <TouchableOpacity
+      onPress={() => onSelect(id)}
+      style={[
+        styles.item,
+        { backgroundColor: selected ? '#6e3b6e' : '#f9c2ff' },
+      ]}
+    >
+      <Text style={styles.title}>{title}</Text>
+    </TouchableOpacity>
+  );
+}
+
+export default function App() {
+  const [selected, setSelected] = React.useState(new Map());
+
+  const onSelect = React.useCallback(
+    id => {
+      const newSelected = new Map(selected);
+      newSelected.set(id, !selected.get(id));
+
+      setSelected(newSelected);
+    },
+    [selected],
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={DATA}
+        renderItem={({ item }) => (
+          <Item
+            id={item.id}
+            title={item.title}
+            selected={!!selected.get(item.id)}
+            onSelect={onSelect}
+          />
+        )}
+        keyExtractor={item => item.id}
+        extraData={selected}
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginTop: Constants.statusBarHeight,
+  },
+  item: {
+    backgroundColor: '#f9c2ff',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+  },
+  title: {
+    fontSize: 32,
+  },
+});
+```
+
 它是对[virtualizedlist](https://reactnative.dev/docs/virtualizedlist)封装，继承自它的所有属性（同样也继承自[ScrollView](https://reactnative.dev/docs/scrollview)),这些继承的属性在这里没有列出来。此外还有以下注意事项：
  
  - 当内容滚动出可视的渲染窗口，滚出部分的状态将丢弃。保证每项的数据被外部存储保存，如Flux,Redux以及Relay.
@@ -42,10 +193,11 @@ categories:
  - 为了优化内存的同时保持平滑滚动，内容被异步离屏渲染。这意味着可能滑动速度可能大于内容的填充速度，会看到短暂的白屏。这是优化而不得不做出的妥协，每个应用可以根据自己的需要来调整对应的参数，我们仍然在这方面的优化做努力。
  - 默认列表会将item数据项的`key`属性作为单项组件的React key。另外，你可以提供自定义函数`keyExtractor`来获取key
 
- ## 参考
- ### Props
+ 
+## Props
  继承自[ScrollView Props](https://reactnative.dev/docs/scrollview#props)，当组件被嵌套在同方向的FlastList下这些属性将无效。
- ### renderItem
+
+### renderItem
  ```
  renderItem({item, index, separators});
  ```
@@ -58,51 +210,51 @@ categories:
     - select (enum('leading', 'trailing'))
     - newProps (Object)
 
- ### data
+### data
  为了简单，data是个纯数组。如果你想要使用其他数据结构，比如不可变数组，请直接使用[virtualizedlist](https://reactnative.dev/docs/virtualizedlist)
 
- ### ItemSeparatorComponent
+### ItemSeparatorComponent
  在每两项之间渲染一个，默认会给组件提供`highlighted`,`leadingItem`属性。`renderItem`提供属性`separators.highlight`/`unhighlight`来更新它的`highlighted`属性。你也可以通过`separators.updateProps`添加自定义属性给它
- ### ListEmptyComponent
+### ListEmptyComponent
 当列表内容是空的时候渲染它，可以是component, function, element
- ### ListFooterComponent
+### ListFooterComponent
 在所有列表元素底部，可以是component, function, element
- ### ListFooterComponentStyle
+### ListFooterComponentStyle
 为内部的`ListFooterComponent`提供样式
- ### ListHeaderComponent
+### ListHeaderComponent
  在所有列表元素顶部，可以是component, function, element
- ### ListHeaderComponentStyle
+### ListHeaderComponentStyle
  为内部的`ListHeaderComponent`提供样式
- ### columnWrapperStyle
+### columnWrapperStyle
  为多列的列项提供包裹样式
- ### extraData
+### extraData
  告诉列表需要重绘的标记样式（因为列表是`PureComponent`）。`renderItem`, Header, Footer依赖除了`data`以外的任何内容，变更都需要告知`extraData`，要将它作为不可变对象看待。
- ### getItemLayout
+### getItemLayout
  这是一个可选的优化项，如果你提前知道单项的固定宽高可以跳过组件进行的动态布局计算。
  利用它在上百项下有很难高的性能。
  如果你指定了分割线，高度计算需要包括分隔线进去
- ### horizontal
+### horizontal
  会将item从竖着堆叠变成横着摆放
- ### initialNumToRender
+### initialNumToRender
  指定首屏需要有多少元素被渲染，应该刚好填充满屏幕。注意这些元素在窗口滚动过程中不会卸载，为了在提高执行`scroll-to-top`操作时不需要重新渲染。
- ### initialScrollIndex
+### initialScrollIndex
  首次渲染不从顶部的第一项开始，取而代之的是`initialScrollIndex`开始。它会禁止掉`initialNumToRender`的优化的项目放在内容中，立刻从initial index开始的位置渲染。需要设置`getItemLayout`属性
- ### inverted
+### inverted
  翻转滚动的方向（应该是下滑变成上拉吧），实质是将`scale`设置成-1
- ### keyExtractor
+### keyExtractor
  用来提取item下独一无二的key，key作为重绘时缓存的依据。默认是取item.key，获取失败会回滚到index，机制和React一样
- ### numColumns
+### numColumns
  多列的数量，表现像flexWrap的z布局。所有的item一样高，`masonry`瀑布流布局不支持
- ### onEndReached
+### onEndReached
 ```
 (info: {distanceFromEnd: number}) => void 
 ```
 当滚动的位置在渲染内容的触摸区内就会调用
- ### onEndReachedThreshold
+### onEndReachedThreshold
 距离列表底部多远时触发`onEndReached`回调，这是一个比值。比如0.5距离底部为可见内容一半长度时触发
- ### onRefresh
+### onRefresh
  如果提供，一个平台标准的组件就会被添加到`下拉刷新`功能上。保证`refreshing`属性被正确设置
- ### onViewableItemsChanged
+### onViewableItemsChanged
  ```
  (info: {
     viewableItems: array,
@@ -110,25 +262,91 @@ categories:
   }) => void
  ```
  可见行变化时被调用。可见范围和变化频次可以去设置`viewabilityConfig`
- ### progressViewOffset
+### progressViewOffset
  当偏移的位置需要加上加载指示器，可以去设置。(Android)
- ### legacyImplementation
+### legacyImplementation
 可能没有实现，仅在调试和性能对比时需要
  > May not have full feature parity and is meant for debugging and performance comparison.
- ### refreshing
+### refreshing
 等待新数据刷新的状态为true
- ### removeClippedSubviews
+### removeClippedSubviews
  在大列表时可能会提高滚动性能
  > 有bug，在某些场景下会导致内容丢失。谨慎使用
- ### viewabilityConfig
- 
- ### viewabilityConfigCallbackPairs
- ## Methods
- ### scrollToEnd
- ### scrollToIndex
- ### scrollToItem
- ### scrollToOffset
- ### recordInteraction
- ### flashScrollIndicators
- ### getScrollResponder
- ### getScrollableNode
+### viewabilityConfig
+看更全的文档可以去看[ViewabilityHelper.js](https://github.com/facebook/react-native/blob/master/Libraries/Lists/ViewabilityHelper.js)库
+viewabilityConfig是一个对象具有下面属性
+
+PROPERTY | REQUIRED | TYPE
+------ | ------ | ------
+minimumViewTime | No | number
+viewAreaCoveragePercentThreshold | No | number
+itemVisiblePercentThreshold | No | number
+waitForInteraction | No | boolean
+
+要求至少有其中一个在`viewAreaCoveragePercentThreshold`，`itemVisiblePercentThreshold`之间。它需要在构造函数中赋值，避免报错
+`Error: Changing viewabilityConfig on the fly is not supported`
+```ts
+constructor (props) {
+  super(props)
+
+  this.viewabilityConfig = {
+      waitForInteraction: true,
+      viewAreaCoveragePercentThreshold: 95
+  }
+}
+```
+``` ts
+<FlatList
+    viewabilityConfig={this.viewabilityConfig}
+  ...
+```
+ - minimumViewTime
+ 单个Item达到最小的物理显示时间（单位是毫秒）就会触发viewability回调。一个较大的值表明滚动不停的话，将没有内容会被标记已显示。
+ - viewAreaCoveragePercentThreshold
+ 部分被遮挡的Item必须大于可视窗口的百分之多少时才会被记为已显示（0-100）。如果全部显示则也会被认为已显示。0表示离可视窗口为0像素是才被认为显示。100表示被遮挡的内容填充满屏幕时才会被认为已显示
+ - itemVisiblePercentThreshold
+ 跟`viewAreaCoveragePercentThreshold`一样，但是会认为Item自身被显示了百分之多少才算已显示，而不是它覆盖可见区域的比列
+ - waitForInteraction
+ 只有在用户交互或者recordInteraction被调用才去计算item是否已显示
+
+### viewabilityConfigCallbackPairs
+`ViewabilityConfig`/`onViewableItemsChanged`值对的列表，`ViewabilityConfig`'s条件会触发响应的`onViewableItemsChanged`调用
+
+## Methods
+### scrollToEnd()
+滚动到底部，如果没有`getItemLayout`行为会比较混乱
+**params**
+ - animated (boolean)：滚动时是否需要动画，默认是true
+
+### scrollToIndex()
+滚动到指定行，且可以指定可显示的位置，`viewPosition`为0时会在视口的顶部，1时在视口底部，0.5在视口中间。
+
+> 注意：如果没有指定getItemLayout属性则没有办法滚动到渲染窗口之外的位置
+
+**params**
+  - animated (boolean)：滚动时是否需要动画，默认是true
+  - index (number)：滚动位置的索引，必须
+  - viewOffset (number)：一个固定值标识指定行后的偏移距离
+  - viewPosition (number)：表示指定行在可视窗口的位置，上面已经表述过了
+
+### scrollToItem()
+滚动到指定数据的行，它会线性扫描data。建议使用`scrollToIndex`
+**params**
+  - animated (boolean)：滚动时是否需要动画，默认是true
+  - item (object)：滚动位置的对象，必须
+  - viewPosition (number)：表示指定行在可视窗口的位置，上面已经表述过了
+  
+### scrollToOffset()
+滚动至列表内容下的偏移像素
+**params**
+  - offset (number)：滚动的偏移距离。如果是在水平模式下，这个就是x轴距离。否则就是y轴距离。必须
+  - animated (boolean)：滚动时是否需要动画，默认是true
+
+### recordInteraction()
+告诉列表有交互了，当`waitForInteractions`是true会触发view是否显示的计算（即使用户没有滚动）。在点击item或者导航跳转的时候该方法也会被调用
+### flashScrollIndicators()
+让滚动指示器显示短暂
+### getScrollResponder()
+提供滚动响应者的引用
+### getScrollableNode()
+提供滚动节点的引用
