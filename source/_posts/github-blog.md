@@ -36,7 +36,7 @@ categories:
 
 ## 如何让博客主题集成易于管理
 一个强大的博客管理工具[Hexo](https://github.com/hexojs/hexo)
-本质就是将博客生成jekyll的静态站点结构，让github支持访问
+本质就是将博客生成静态站点。所有博客文章都是静态文章
 
 ## 如何让博客构建自动化
 第三方构建服务[travis-ci](https://travis-ci.com/)

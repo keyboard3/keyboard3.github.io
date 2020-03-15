@@ -7,12 +7,13 @@ mathjax: true
 date: 2020-03-15 11:01:06
 password:
 summary:
-tags: [react-native,翻译]
+tags: [react-native,api,翻译]
 categories:
 ---
 # [VirtualizedList](https://reactnative.dev/docs/virtualizedlist)
 ## 介绍
 是[FlatList](/blog/flatlist)和[SectionList](https://reactnative.dev/docs/sectionlist)的父类实现。有更好的记录。通常情况下应该使用`FlatList`，除非需要更灵活采用它。比如你需要使用不可变数据
+[中文文档](https://reactnative.cn/docs/virtualizedlist/)
 虚拟化列表通过维护一个可见的元素在有限的窗口，不可见的元素维护一个空白空间来替代所有离开屏幕的所有元素。这种方式可以适配所有滚动行为，如果元素滚动离可视区域越远它就获得一个低优先级，否则就获得一个高优先级。通过这种方式来尽可能的减少见到空白空间
 **一些警告**
  - 当内容滚动出可视的渲染窗口，滚出部分的状态将丢弃。保证每项的数据被外部存储保存，如Flux,Redux以及Relay.
@@ -21,7 +22,7 @@ categories:
  - 默认列表会将item数据项的`key`属性作为单项组件的React key。另外，你可以提供自定义函数`keyExtractor`来获取key
 
 ## Props
-继承自[ScrollView Props](https://reactnative.dev/docs/scrollview#props)
+继承自[ScrollView Props](/blog/scrollview#props)
 ### renderItem
  ```
  (info: any) => ?React.Element<any>

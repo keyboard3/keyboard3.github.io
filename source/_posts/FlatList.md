@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-03-14 18:05:38
 password:
 summary:
-tags: [react-native,翻译]
+tags: [react-native,api,翻译]
 categories:
 ---
 
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
 ```
  
 ## Props
- 继承自[ScrollView Props](https://reactnative.dev/docs/scrollview#props)，当组件被嵌套在同方向的FlastList下这些属性将无效。
+ 继承自[ScrollView Props](/blog/scrollview#props)，当组件被嵌套在同方向的FlastList下这些属性将无效。
 
 ### renderItem
  ```
