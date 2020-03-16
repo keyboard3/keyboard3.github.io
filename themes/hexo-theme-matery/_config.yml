@@ -7,9 +7,6 @@ menu:
   Tags:
     url: /blog/tags
     icon: fas fa-tags
-  Categories:
-    url: /blog/categories
-    icon: fas fa-bookmark
   Archives:
     url: /blog/archives
     icon: fas fa-archive
