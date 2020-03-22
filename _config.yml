@@ -4,12 +4,12 @@
 
 # Site
 title: keyboard3的博客
-subtitle: '专注度太差'
-description: '我想事业有成，家庭美满，不过好像有点远'
+subtitle: "专注度太差"
+description: "我想事业有成，家庭美满，不过好像有点远"
 keywords:
 author: keyboard3
 language: zh-CN
-timezone: ''
+timezone: ""
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
@@ -30,7 +30,7 @@ archive_dir: archives
 category_dir: categories
 code_dir: downloads/code
 i18n_dir: :lang
-skip_render: 
+skip_render:
   - README.md
   - "*.html"
 
@@ -41,7 +41,7 @@ titlecase: false # Transform title into titlecase
 external_link:
   enable: true # Open external links in new tab
   field: site # Apply to the whole site
-  exclude: ''
+  exclude: ""
 filename_case: 0
 render_drafts: false
 post_asset_folder: false
@@ -56,9 +56,9 @@ highlight:
 
 # 修复代码块行号不显示bug
 prism_plugin:
-  mode: 'preprocess'
+  mode: "preprocess"
   line_number: true
-  theme: 'tomorrow'
+  theme: "tomorrow"
   custom_css:
 
 # Home page setting
@@ -66,7 +66,7 @@ prism_plugin:
 # per_page: Posts displayed per page. (0 = disable pagination)
 # order_by: Posts order. (Order by date descending by default)
 index_generator:
-  path: ''
+  path: ""
   per_page: 10
   order_by: -date
 
@@ -120,7 +120,7 @@ search:
 # 中文链接转拼音
 permalink_pinyin:
   enable: true
-  separator: '-'
+  separator: "-"
 
 # 文章紫薯统计插件
 postInfo:
@@ -147,8 +147,12 @@ feed:
   hub:
   content:
   content_limit: 140
-  content_limit_delim: ' '
+  content_limit_delim: " "
   order_by: -date
+
+sitemap:
+  path: sitemap.xml
+  rel: false
 
 # live2d 模型
 live2d:
@@ -169,4 +173,3 @@ live2d:
     show: true
   react:
     opacity: 1
-
