@@ -52,7 +52,7 @@ categories:
 ```
 npm run dev
 ```
-用http://localhost:3000来打开网站
+用`http://localhost:3000`来打开网站
 ### 创建我们第一个页面
 现在让我们来创建第一个页面。创建`pages/index.js`文件，并将下面内容添加进去
 ```
