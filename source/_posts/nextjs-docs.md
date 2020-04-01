@@ -31,6 +31,194 @@ categories:
 
 ## API 路由
 
+Next.js 的 API routes 中提供了直接解决方案来构建你自己的 API
+任何放到`pages/api`文件夹的文件会被映射成`/api/*`，会被认为是 API 还不是页面
+比如，下面 API 路由`pages/api/user.js`处理一个简单的 json 响应：
+
+```
+export default (req, res) => {
+  res.statusCode = 200
+  res.setHeader('Content-Type', 'application/json')
+  res.end(JSON.stringify({ name: 'John Doe' }))
+}
+```
+
+为了 API 路由正常工作，你需要导出一个 default 函数(请求处理函数),它会接收下面的参数
+
+- `req`: 它是[http.IncomingMessage](https://nodejs.org/api/http.html#http_class_http_incomingmessage)实例，加一些预先构建的中间件，你可以看[这里](https://nextjs.org/docs/api-routes/api-middlewares)
+- `res`: 它是[http.ServerResponse](https://nodejs.org/api/http.html#http_class_http_serverresponse)实例，添加一些帮助函数可以看[这里](https://nextjs.org/docs/api-routes/response-helpers)
+  为了在一个 API 路由中处理不同的 http 方法，你可以使用`req.method`,比如
+
+```
+export default (req, res) => {
+  if (req.method === 'POST') {
+    // Process a POST request
+  } else {
+    // Handle any other HTTP method
+  }
+}
+```
+
+获取 API 节点，看下下面章节的案例
+
+> API 路由不要求指定跨域头，意味着默认只支持同源请求。你可以用[跨域中间件](https://nextjs.org/docs/api-routes/api-middlewares#connectexpress-middleware-support)包装请求处理函数来自定义这个行为
+> API 路由不会增加你客户端的文件大小，只会增加服务端的大小
+
+### 动态 API 路由
+
+API 路由支持动态路由，命名规则还是使用`pages`。例子，`pages/api/post/[pid].js`下面代码：
+
+```
+export default (req, res) => {
+  const {
+    query: { pid },
+  } = req
+
+  res.end(`Post: ${pid}`)
+}
+```
+
+现在，请求`/api/post/abc`将会返回`Post: abc`
+
+#### 捕获所有的路由
+
+API 路由通过在括号中添加...捕获它下面所有路径，比如：
+
+- `pages/api/post/[...slug].js`匹配`/api/post/a`,同样`/api/post/a/b`以及`/api/post/a/b/c`也会匹配
+
+> 注意：你可以不用`slug`用其他的比如`[..param]`
+> 匹配参数将会作为查询参数发送给页面（这个例子是`slug`）,它经常是一个数组，路径`/api/post/a`的`query`对象为：
+
+```
+{ "slug": ["a"] }
+```
+
+`/api/post/a/b`路径的参数这样
+
+```
+{ "slug": ["a", "b"] }
+```
+
+`pages/api/post/[...slug].js`的 API 处理可以这样：
+
+```
+export default (req, res) => {
+  const {
+    query: { slug },
+  } = req
+
+  res.end(`Post: ${slug.join(', ')}`)
+}
+```
+
+现在，请求`/api/post/a/b/c`将返回`Post: a, b, c`
+
+#### 注意事项
+
+- 预先定义的 API 路由优先级高于动态路由，动态路由会捕获剩下的所有 API。看下下面的例子：
+- `pages/api/post/create.js` - 将匹配 `/api/post/create`
+- `pages/api/post/[pid].js` - 将匹配 `/api/post/1`, `/api/post/abc`, 等等. `/api/post/create`将不会被匹配
+- `pages/api/post/[...slug].js` - 将匹配 `/api/post/1/2`, `/api/post/a/b/c`, 等等. `/api/post/create`, `/api/post/abc`将不会被匹配
+
+### API 中间件
+
+API 路由提供内置中间件解析进来的请求`req`。有这些中间件
+
+- `req.cookies` - 对象包含请求发送过来的 cookie，默认是`{}`
+- `req.query` - 对象包含[query string](https://en.wikipedia.org/wiki/Query_string)，默认是`{}`
+- `req.body` - 对象包含根据`content-type`解析过的 body，如果没有`body`，它是 null
+
+#### 自定义配置
+
+每个 API 路由都可以到处一个`config`对象来修改默认配置，例如
+
+```
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '1mb',
+    },
+  },
+}
+```
+
+这个`api`对象包含所有 API 路由的配置
+`bodyParser`启用 body 解析，你如果想要自己消费`Stream`可以禁用掉
+`bodyParser.sizeLimit`是最大允许解析的 Size，支持[bytes](https://github.com/visionmedia/bytes.js)，比如：
+
+```
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '500kb',
+    },
+  },
+}
+```
+
+#### 支持 Connect/Express 中间件
+
+你也可以使用[Connect](https://github.com/senchalabs/connect)兼容中间件。
+比如，利用[cors 包]为 API[配置 CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)。
+首先，安装`cors`:
+
+```
+npm i cors
+# or
+yarn add cors
+```
+
+现在，让我们添加`cors`到 API 路由
+
+```
+import Cors from 'cors'
+
+// Initializing the cors middleware
+const cors = Cors({
+  methods: ['GET', 'HEAD'],
+})
+
+// Helper method to wait for a middleware to execute before continuing
+// And to throw an error when an error happens in a middleware
+function runMiddleware(req, res, fn) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, result => {
+      if (result instanceof Error) {
+        return reject(result)
+      }
+
+      return resolve(result)
+    })
+  })
+}
+
+async function handler(req, res) {
+  // Run the middleware
+  await runMiddleware(req, res, cors)
+
+  // Rest of the API logic
+  res.json({ message: 'Hello Everyone!' })
+}
+
+export default handler
+```
+
+#### 响应帮助
+
+响应`res`包含一些类似于 express.js 的函数，提高开发者的体验并加快创建一个 API 路由的效率。看下下面的案例。
+
+```
+export default (req, res) => {
+  res.status(200).json({ name: 'Next.js' })
+}
+```
+
+包含下面的帮助：
+
+- `res.status(code)` - 设置状态码，`code`一定是一个有效的 HTTP 状态码
+- `res.json(json)` - 发送 json 响应。`json`一定是一个有效的 JSON 对象
+- `res.send(body)` - 发送 HTTP 响应。`body`可以是`string`、`object`或者是`Buffer`
+
 ## 部署
 
 ## 高级特性
