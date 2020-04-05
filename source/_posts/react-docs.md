@@ -74,7 +74,7 @@ const ref = React.createRef();
 
 ### 组件库维护者注意
 
-**当你在组件库中使用 ref 转发时，你议案将它作为一个大版本修改**。这是因为你的库可能会观察到不同的行为（取决于你 ref 赋值给谁，它是什么类型），它会导致应用崩溃因为其他库都依赖旧的行为。
+**当你在组件库中使用 ref 转发时，建议将它作为一个大版本修改**。这是因为你的库可能会观察到不同的行为（取决于你 ref 赋值给谁，它是什么类型），它会导致应用崩溃因为其他库都依赖旧的行为。
 尽管`React.forwardRef`存在是允许有条件的使用，但也不推荐：它会改变你库的行为并且会造成他们升级 React 时，用户的应用被破坏。
 
 ---
@@ -668,7 +668,94 @@ ReactDOM.findDOMNode(component)
 
 # HOOKS
 
+> Hooks 是 React 16.8 新加的。它可以不写 Class 也能用到 State 以及 React 的其他特性
+
 ## 介绍
+
+```jsx
+import React, { useState } from "react";
+
+function Example() {
+  // 声明一个新的状态变量，我们将会调用这个count
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>Click me</button>
+    </div>
+  );
+}
+```
+
+这个新的 useState 函数使我们学习的第一个“Hook”，但是这个案例只是演示。如果不理解不用担心。
+**你可以在下一页学习 HOOKS**。这页，我们继续解释为什么我们给 React 给 HOOKS，它们怎么帮助你写下好的应用。
+
+> 注意
+> React 16.8 是支持 Hooks 的第一个版本。升级的时候，不要忘记升级所有的包，包括 React DOM。 React Native 从 0.59 版本支持 HOOKS
+
+### 视频介绍
+
+在 React 2018 会议上，Sophie Alpert 和 Dan Abramov 介绍了 Hooks，跟着 Ryan Florence 演示如何使用它们去重构一个应用。看下面的视频
+
+### 不用破坏性改动
+
+在我们继续之前，注意 Hooks：
+
+- 完全可选。你可以只在一些组件中试用 Hooks,不用重新已存在的代码。如果你不想要你不用立刻学习和使用 Hooks。
+- 百分百的向后兼容。Hooks 不包含任何破坏性改动
+- 现在可用。Hooks 已经发布在 16.8 版本
+
+**React 没有计划去删除类**。你可以在下面的章节中督导更多关于渐进策略。
+
+**Hooks 不会影响你已有的 React 概念**。相反，Hooks 会为 React 概念提供更直接的 API。你已经知道的：属性，状态，上下文，引用，以及生命周期。稍后我们会提到，Hooks 也提供了更强大的方式来组合它们。
+
+**如果你只想要学习 Hooks，直接跳到下一节！**你可以继续读这一页学习更多关于为什么我们添加 Hooks，以及我们如何使用它们不需要重写自己的应用
+
+### 动机
+
+Hooks 解决了我们过去 5 年写过和维护的上千个 React 组件的各种不相关的问题。无论你在学习 React，还是每天使用，或者使用者类似的组件模型的框架，你可能遇到过这些问题。
+
+### 很难在组件之间复用状态逻辑
+
+React 没有提供将可复用的行为附加到组件的方式（比如，链接到 Store）。如果你使用 React，你可能比较熟悉像[render props](https://reactjs.org/docs/render-props.html)和[higher-order components](https://reactjs.org/docs/higher-order-components.html)。但是这些方案需要使用它们需要重构你的组件，它们会使得你的代码非常难理解。如果你在 React DevTools 中观察过 React 应用，你将会发现由 Providers，consumers，higher-order 组件,render props，以及其他抽象包裹的组件回调地狱。尽管我们可以在[DevTools](https://github.com/facebook/react-devtools/pull/503)过滤它们，这些指向了一个更深的问题：React 需要为共享状态逻辑提供更好的原生途径。
+
+使用 Hooks,你可以从组件里提取状态逻辑，使得它们可以独立测试和重复使用。**Hooks 允许你户需要你改变组件树结构来重用状态逻辑**。它使得在组件之间或者是在社区中共享状态逻辑变得简单。
+
+我们在[构建自己的 Hooks](https://reactjs.org/docs/hooks-custom.html)讨论更多的内容
+
+### 复杂组件变得更难理解
+
+我们经常开始维护一个简单的组件，但是逐渐状态变得难以管理且有许多副作用。每个生命周期函数经常不相关的逻辑混在一起。比如，组件可能在 componentDidMount 和 componentDidUpdate 中执行相同的获取数据操作。但是相同的 componentDidMount 函数也包含其他逻辑比如设置时间按监听，还需要在 componentWillUnmount 清理它。相互关联的代码需要在不同的地方一起变更，但是完全不相同的代码却要合并到一个方法里。这非常容易制造 bugs 和不一致的地方。
+
+在许多情况下不可能将组件分割成更小，因为状态逻辑需要全局存在才行。这使得非常难以测试。这也是许多人更喜欢独立一个状态管理库的一个原因。然而，这些库会创造出太多的抽象，要求你在不同文件之间跳转，且使得组件之间复用更加困难。
+
+为了解决它，**Hooks 让你基于相关联的逻辑将组件分割到更小的函数中（比如设置订阅和获取数据）**，而不是强制基于生命周期分割 diamante。你可以使用 reducer 管理组件的本地状态，让它变得可预测。
+
+我们将在[Using the Effect Hook.](https://reactjs.org/docs/hooks-effect.html#tip-use-multiple-effects-to-separate-concerns)更多的讨论它们。
+
+### 类会使得人和机器弄混
+
+除了会使得代码重用和 diamante 组织变得更困难之外，我们发现类是学习 React 的最大屏障。你需要理解`this`是如何在 JS 中工作的，它与许多语言的运行方式都不一样。你需要记着绑定事件处理函数。没有问题的[语法提案](https://babeljs.io/docs/en/babel-plugin-transform-class-properties/)，代码也非常的冗余。人们很好的理解 props，state,以及从上而下的数据流，但是很难理解类。React 的 class 和 function 组件的区别，使用过的即使是有经验的开发者之间也会存在分歧。
+
+另外，React 以及存在 5 年了，我们希望下一个 5 年也能够与时俱进。像[Svelte](https://svelte.dev/),[Angular](https://angular.io/),[Glimmer](https://glimmerjs.com/)以及其他展示的那样，组件的[预编译](https://en.wikipedia.org/wiki/Ahead-of-time_compilation)有许多潜力。尤其是在没有限制模板的时候。最近，我们一直用[Prepack](https://prepack.io/)实验[组件折叠](https://github.com/facebook/react/issues/7323),并且我们已经取得了初步成果。然而我们发现类组件会无意中鼓励一些开发范式使得一些优化方案回退到很慢的情况。类给现在的工具仍然会造成问题。比如，类无法压缩的不好，并且他会使得热加载不稳定。我们想要提供新的这个 API 使得代码能够更好的被优化。
+
+为了解决这些问题，**Hooks 让你在不使用类的情况下获得更多的 React 特性**。概念上，React 组件已经非常接近函数。Hooks 拥抱函数，但是不会牺牲 React 实际的核心。Hooks 提供解决方案，并且不要求你学习复杂的功能或者响应式的编程技巧。
+
+> 案例
+> [Hooks 一览](https://reactjs.org/docs/hooks-overview.html) 是一个很好的学习 Hooks 的地方
+
+### 渐进兼容策略
+
+> 总结：没有计划从 React 中删除类
+
+我们知道 React 开发者更关注迭代产品,没有时间来看每个版本的新 api。Hooks 非常新，可能等更多的案例和教程出来之后再考虑学习和适配它们更好。
+
+我们知道向 React 添加新的原生概念门槛非常高。对于更好奇的读者，我们准备了更加[详细的征求意见文档](https://github.com/reactjs/rfcs/pull/68)，来挖掘更详细的动机，并且提供了具体的设计决策和相关现有技术的额外视角。
+
+**至关重要的是，Hooks 可以和现有代码同时工作，所以你可以渐进的使用它们**。不用赶着迁移 Hooks。我们建议编码任何“大的重写”，尤其是对已经存在的复杂的 class 组件。在我们的经验里，最好的练习方式是在首先在新的非核心组件中使用 Hooks，保证团队中的每个人都能够适应它。在你尝试 Hooks 之后，请随时发送邮件给我吗，无论积极和负面的。
+
+我们意图让 Hooks 能够覆盖所用 class 的场景，但是我们仍然会对 class 支持。在 Facebook，我们有上千个用 class 的组件，我们绝对没有计划去重写它们。相反，我们会在新的代码中将 Hooks 与 class 一起使用。
 
 ## Hooks 一览
 
@@ -676,7 +763,6 @@ ReactDOM.findDOMNode(component)
 
 ## 使用 Effect Hook
 
-> Hooks 是 React 16.8 新加的。它可以不写 Class 也能用到 State 以及 React 的其他特性
 > Effect Hook 让你在函数组件中执行副作用的操作
 
 ```
