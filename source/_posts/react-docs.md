@@ -759,6 +759,233 @@ React 没有提供将可复用的行为附加到组件的方式（比如，链�
 
 ## Hooks 一览
 
+Hooks 是[向后兼容](https://reactjs.org/docs/hooks-intro.html#no-breaking-changes)。这个页面为有经验 React 用户提供了 Hooks 概览。
+
+> 详细介绍
+> 读这篇[动机](https://reactjs.org/docs/hooks-intro.html#motivation)来学习为什么我们要在 React 使用 Hooks。
+
+### State Hook
+
+这个案例渲染了一个计数器。当你点击按钮，他就会增加值：
+
+```jsx
+import React, { useState } from "react";
+
+function Example() {
+  // 定义一个新状态变量，我们叫做count
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>Click me</button>
+    </div>
+  );
+}
+```
+
+这里, useState 是一个 Hooks（我们等会来讨论含义）。我们在函数组件中调用它，添加本地 state 进去。React 会在重复渲染的函数中保留它的状态。useState 返回一对：当前状态值和让你更新它的函数。你可以在事件处理器或者其他地方调用这个更新函数。它非常像 class 中的 this.setState，但是它不会合并旧值和新值。（我们展示了一个案例在[使用 State Hook](https://reactjs.org/docs/hooks-state.html)比较 useState 和 this.state）。
+
+useState 只有一个参数是初始化值。在上面的案例中，它是 0 因为我们的计数器是从 0 开始。注意不像 this.state，这里的 state 不必是一个对象-虽然如果你想要可以是。初始的状态参数只有在第一次渲染期间使用。
+
+**声明多个状态变量**
+你可以在一个组件中多次使用 State Hook
+
+```jsx
+function ExampleWithManyStates() {
+  // 定义多个状态变量
+  const [age, setAge] = useState(42);
+  const [fruit, setFruit] = useState("banana");
+  const [todos, setTodos] = useState([{ text: "Learn Hooks" }]);
+  // ...
+}
+```
+
+这个数组解构语法让我可以在调用 useState 时给状态变量取不同的名字。这些名字不是 useState Api 的一部分。相反，React 假设如果你调用 useState 多次，你在每次渲染时候是调用的相同的顺序。我们后面会讲到为什么它能工作并且什么时候有用。
+
+那么什么是 Hook?
+Hooks 是一个函数让你可以钩子钩进函数组件的状态和声明周期中的特性。Hooks 不在 class 中工作-让你不用 class 使用 React。（我们不建议全部重写现有的代码，但是你可以在新组件中使用它）
+
+React 提供了一些内置的 Hooks 比如 useState。你也可以创建你自己的 Hooks 在不同的组件之间复用一些状态逻辑行为。我们将首先开内置的 Hooks。
+
+> 详细说明
+> 你可以在专用的页面[Using the State Hook.](https://reactjs.org/docs/hooks-state.html)来学习更多的 state Hook 知识。
+
+### Effect Hook
+
+你之前可能已经执行过数据获取，订阅，或者手动在 React 组件中改变 DOM。我们叫这些行为为”副作用“（或者说是作用），因为它们可以影响其他组件并且在一次渲染过程中就结束。
+
+这个 Effect Hook，useEffect，给函数组件添加执行副作用的能力。它跟 React class 中的 componentDidMount,componentDidUpdate,componentWillUnmount 用途相同，但是被统一到单个 API 中。（我们显示的案例比较了 useEffect 和在[Effect Hook 使用](https://reactjs.org/docs/hooks-effect.html)中的方法）
+
+这个例子，这个组件在 React 更新 DOM 之后设置 document 的标题：
+
+```
+import React, { useState, useEffect } from 'react';
+
+function Example() {
+  const [count, setCount] = useState(0);
+
+  // Similar to componentDidMount and componentDidUpdate:
+  useEffect(() => {
+    // Update the document title using the browser API
+    document.title = `You clicked ${count} times`;
+  });
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>
+        Click me
+      </button>
+    </div>
+  );
+}
+```
+
+当你调用 useEffect，你告诉 React 在刷新变更到 DOM 之后运行你的”副作用“函数。Effects 在组件中被定义，所以它们可以访问组件的 props 和 state。默认情况下，React 在每次渲染之后运行 effects-包括第一次渲染（我们更多关于如何比较 class 的生命周期在[使用 Effect Hook 文章里](https://reactjs.org/docs/hooks-effect.html)）。
+
+Effects 可以通过返回一个函数可选的指定如何清除它们。举例，这个组件使用 effect 来订阅用户在线状态，然后通过取消订阅来清除这个副作用。
+
+```jsx
+import React, { useState, useEffect } from "react";
+
+function FriendStatus(props) {
+  const [isOnline, setIsOnline] = useState(null);
+
+  function handleStatusChange(status) {
+    setIsOnline(status.isOnline);
+  }
+
+  useEffect(() => {
+    ChatAPI.subscribeToFriendStatus(props.friend.id, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(props.friend.id, handleStatusChange);
+    };
+  });
+
+  if (isOnline === null) {
+    return "Loading...";
+  }
+  return isOnline ? "Online" : "Offline";
+}
+```
+
+在这例子中，React 当在组件销毁时取消订阅我们的 ChatAPI，然后在后续渲时会跟之前一样重复运行这个副作用。（如果我们传递 props.friend.id 给 ChatAPI 没有任何变化，你也可以选择[告诉 React 跳过重新订阅](https://reactjs.org/docs/hooks-effect.html#tip-optimizing-performance-by-skipping-effects)）
+
+跟 useState 一样，你可以在单个组件中使用多个副作用：
+
+```jsx
+function FriendStatusWithCounter(props) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    document.title = `You clicked ${count} times`;
+  });
+
+  const [isOnline, setIsOnline] = useState(null);
+  useEffect(() => {
+    ChatAPI.subscribeToFriendStatus(props.friend.id, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(props.friend.id, handleStatusChange);
+    };
+  });
+
+  function handleStatusChange(status) {
+    setIsOnline(status.isOnline);
+  }
+  // ...
+```
+
+Hooks 让你在一个组件中管理相关联的副作用。（比如添加和删除订阅），而不是强制基于生命周期函数分割逻辑。
+
+> 详细解释
+> 你可以在下面专用的页面[使用 Effect Hook](https://reactjs.org/docs/hooks-effect.html)来学习更多的 UseEffect
+
+### 构建自己的 Hooks
+
+有时候，我们想要在组件之间重用状态逻辑。之前，有两种方案：[高阶组件](https://reactjs.org/docs/higher-order-components.html)和[渲染属性](https://reactjs.org/docs/render-props.html)。自定义 Hooks 可以做到，切不需要在组件树中添加更多的组件。
+
+这页面刚开始，我们介绍了 FriendStatus 组件，它调用 useState 和 useEffect Hooks 去订阅好友的在线状态。我们想要在其他组件中也复用这个订阅逻辑。
+
+首先，我们提取逻辑到自定义 Hook 叫 useFriendStatus:
+
+```jsx
+import React, { useState, useEffect } from "react";
+
+function useFriendStatus(friendID) {
+  const [isOnline, setIsOnline] = useState(null);
+
+  function handleStatusChange(status) {
+    setIsOnline(status.isOnline);
+  }
+
+  useEffect(() => {
+    ChatAPI.subscribeToFriendStatus(friendID, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(friendID, handleStatusChange);
+    };
+  });
+
+  return isOnline;
+}
+```
+
+它获取 friendID 作为参数，然后返回朋友是否在线状态。
+现在我们可以在组件之间使用它：
+
+```jsx
+function FriendStatus(props) {
+  const isOnline = useFriendStatus(props.friend.id);
+
+  if (isOnline === null) {
+    return "Loading...";
+  }
+  return isOnline ? "Online" : "Offline";
+}
+```
+
+```jsx
+function FriendListItem(props) {
+  const isOnline = useFriendStatus(props.friend.id);
+
+  return (
+    <li style={{ color: isOnline ? "green" : "black" }}>{props.friend.name}</li>
+  );
+}
+```
+
+这些组件内的状态完全隔离。Hooks 是一种复用状态逻辑的方式，而不是复用状态本身。实际上，每次调用 Hook 有完全独立的状态-所以甚至你可以在一个组件中调用多次自定义 Hook。
+
+自定义 Hook 更像是一中约定而非功能。如果函数的名字以 use 开头并且他调用了其他 Hooks，我们就可以认你为它是自定义 Hook。这种 useSomething 的命名方式约定让 linter 插件可以找到使用 Hooks 代码的 bug。
+
+你可以创建自定义 Hooks 覆盖表单处理，动画，订阅生命，计时器以及其他我们没想到的应用场景。我们非常期待 React 社区将会出现什么样的自定义 Hooks。
+
+> 详细说明
+> 你可以在指定文章[构建自己的 Hooks](https://reactjs.org/docs/hooks-custom.html)看到更多内容
+
+### 其他 HOOKS
+
+这里有一些很少使用的内置 Hooks，你可能会觉得有用。比如，[useContext](https://reactjs.org/docs/hooks-reference.html#usecontext)让你不需要嵌套就可以订阅 React 上下文。
+
+```
+function Example() {
+  const locale = useContext(LocaleContext);
+  const theme = useContext(ThemeContext);
+  // ...
+}
+```
+
+[useReducer](https://reactjs.org/docs/hooks-reference.html#usereducer)让你用 reducer 合并复杂组件的本地状态。
+
+```
+function Todos() {
+  const [todos, dispatch] = useReducer(todosReducer);
+  // ...
+```
+
+> 详细说明
+> 你可以在特定页面[Hooks API](https://reactjs.org/docs/hooks-reference.html)学到其他内置的 Hooks。
+
+
 ## 使用 State Hook
 
 ## 使用 Effect Hook
