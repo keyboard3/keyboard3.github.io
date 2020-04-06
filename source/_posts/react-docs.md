@@ -1775,6 +1775,240 @@ useEffect(function persistForm() {
 
 ### 构建自己的 Hooks
 
+构建自己的 Hooks 让你可以提取组件的逻辑到可重用的函数。
+
+当我们学习 Effect Hook 时，我们看到聊天应用的组件显示消息来指示朋友是在线还是离线：
+
+```jsx
+import React, { useState, useEffect } from "react";
+
+function FriendStatus(props) {
+  const [isOnline, setIsOnline] = useState(null);
+  useEffect(() => {
+    function handleStatusChange(status) {
+      setIsOnline(status.isOnline);
+    }
+    ChatAPI.subscribeToFriendStatus(props.friend.id, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(props.friend.id, handleStatusChange);
+    };
+  });
+
+  if (isOnline === null) {
+    return "Loading...";
+  }
+  return isOnline ? "Online" : "Offline";
+}
+```
+
+现在让我们来看，聊天应用还有一个聊天列表，我们想要渲染在线用户端名字为绿色。我们可以 cv 相同的逻辑到 FriendListItem 项中，但是这不够理想。
+
+```jsx
+import React, { useState, useEffect } from "react";
+
+function FriendListItem(props) {
+  const [isOnline, setIsOnline] = useState(null);
+  useEffect(() => {
+    function handleStatusChange(status) {
+      setIsOnline(status.isOnline);
+    }
+    ChatAPI.subscribeToFriendStatus(props.friend.id, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(props.friend.id, handleStatusChange);
+    };
+  });
+
+  return (
+    <li style={{ color: isOnline ? "green" : "black" }}>{props.friend.name}</li>
+  );
+}
+```
+
+相反，我们希望在 FriendStatus 和 FriendListItem 之间共享这个逻辑。
+
+在这之前，React 在组件之间有两种方式共享状态逻辑：[渲染属性](https://reactjs.org/docs/render-props.html) 和[高阶组件](https://reactjs.org/docs/higher-order-components.html)。我们将看到 Hooks 如何不在组件树中添加更多的组件解决这些问题。
+
+#### 提取自定义 Hook
+
+当我们想要在两个 js 函数中共享逻辑时，我们提取它到第三方函数中。组件和 Hooks 都是函数，所以这同样可以生效！
+
+**自定义 Hook 是一个使用 use 开头的 js 函数并且可以调用其他 Hooks。**列如，下面 useFriendStatus 是我们第一个自定义 Hook。
+
+```jsx
+import { useState, useEffect } from "react";
+
+function useFriendStatus(friendID) {
+  const [isOnline, setIsOnline] = useState(null);
+
+  useEffect(() => {
+    function handleStatusChange(status) {
+      setIsOnline(status.isOnline);
+    }
+
+    ChatAPI.subscribeToFriendStatus(friendID, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(friendID, handleStatusChange);
+    };
+  });
+
+  return isOnline;
+}
+```
+
+这里面没有新的的东西--逻辑都是从上面的组件中 copy 过去的。就像在组件中，保证只在自定义 Hook 顶层调用其他 Hook。
+
+不像 React 组件，自定义 Hook 不需要有具体签名。我们可以自己决定用什么参数，参数是什么，以及该返回什么。其他方面就像一个普通的函数。函数命名一直以 use 开头，一眼就可以看出符合 Hooks 的规则。
+
+useFriendStatus Hook 的目的是为了订阅朋友的状态。这也会为什么第一给参数是 friendID，返回这个朋友是否在线。
+
+```jsx
+function useFriendStatus(friendID) {
+  const [isOnline, setIsOnline] = useState(null);
+
+  // ...
+
+  return isOnline;
+}
+```
+
+现在让我们来看下如何使用我们自己的自定义 Hook
+
+#### 使用自定义 Hook
+
+我们开始的目标是从 FriendStatus 和 FriendListItem 组件中删除重复逻辑。它们两个都想知道朋友是否在线。
+现在我们可以提取逻辑到 useFriendStatus Hook，然后就可以使用它。
+
+```jsx
+function FriendStatus(props) {
+  const isOnline = useFriendStatus(props.friend.id);
+
+  if (isOnline === null) {
+    return "Loading...";
+  }
+  return isOnline ? "Online" : "Offline";
+}
+```
+
+```jsx
+function FriendListItem(props) {
+  const isOnline = useFriendStatus(props.friend.id);
+
+  return (
+    <li style={{ color: isOnline ? "green" : "black" }}>{props.friend.name}</li>
+  );
+}
+```
+
+**这代码是否等价于原来的案例？** 是的，它们相等。如果你仔细观察，你将注意到我们不会更改任何行为。我们只是从两个函数中提取公共的代码到独立的函数中。**自定义 Hooks 是自然遵循 Hooks 设计的约定，而不是 React 特性。**
+
+**自定义 Hook 命名开始都必须带 use 吗？** 必须。这个约定很重要。没有它，我们无法自动检查 Hooks 的规则违规，因为我们无法知道那个函数包含了 Hooks 调用。
+
+**在两个组件使用相同的 Hook 会共享装填吗？** 不会。自定义 Hooks 是重用状态逻辑的机制（像设置订阅和记住当前值），但是你每次使用自定义 Hook，所有其中的状态和 effects 都是完全独立的。
+
+**自定义 Hook 如何获得独立的状态？** 每次调用 Hook 获得独立的状态。因为直接调用 useFriendStatus，从 React 的视角我们的组件只是调用了 useState 和 useEffect。跟我们之前了解的一样，我们可以在一个组件中调用 useState 和 useEffect 多次，它们是完全独立的。
+
+**提示：在 Hooks 之间传递信息**
+因为 Hooks 是一个函数，我们可以在它们之间传递信息。
+
+为了说明这一点，在我们假想的聊天案例中使用其他组件。它是一个聊天消息接收者选择器，显示那些当前选中好友是否在线：
+
+```jsx
+const friendList = [
+  { id: 1, name: "Phoebe" },
+  { id: 2, name: "Rachel" },
+  { id: 3, name: "Ross" }
+];
+
+function ChatRecipientPicker() {
+  const [recipientID, setRecipientID] = useState(1);
+  const isRecipientOnline = useFriendStatus(recipientID);
+
+  return (
+    <>
+      <Circle color={isRecipientOnline ? "green" : "red"} />
+      <select
+        value={recipientID}
+        onChange={e => setRecipientID(Number(e.target.value))}
+      >
+        {friendList.map(friend => (
+          <option key={friend.id} value={friend.id}>
+            {friend.name}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+}
+```
+
+我们存当前选中的好友 ID 到 recipientID 的状态变量上，我们可以传递它到我们自定义的 useFriendStatus Hook 的参数上。
+
+```jsx
+const [recipientID, setRecipientID] = useState(1);
+const isRecipientOnline = useFriendStatus(recipientID);
+```
+
+它让我们知道当前选中的朋友是否在线。如果我们选中另外一个好友，然后会更新这个 recipientID 状态变量，我们 useFriendStatus Hook 将之前的选中的好友取消订阅，并订阅当前新选中的一个。
+
+#### useYourImagination()
+
+自定义 Hooks 提供了之前无法在 React 上实现的灵活共享状态逻辑。你可以自定义 Hooks 来覆盖更大范围的用户场景，比如表单处理，动画，声明订阅，定时器和可能更多我们无法考虑到的场景。更重要的是，你创建 Hooks 就像使用 React 内置特性一样简单。
+
+尽量避免过早的添加抽象。现在函数组件可以做的更多，那么你代码仓库中函数组件的代码将会边长。这属于正常现象--不要觉得你要立刻将它拆分到 Hook 中。但我们仍鼓励你发现自定义 Hook 可以将复杂的逻辑隐藏在简单的接口后面，或者帮助解开组件杂乱的情况。
+
+举例，可能你有个复杂的组件，包含大量用特殊方式管理的本地状态。useState 不会使得集中化的更新逻辑简单，所以你应该更愿意使用 Redux 的 reducer 来编写：
+
+```jsx
+function todosReducer(state, action) {
+  switch (action.type) {
+    case "add":
+      return [
+        ...state,
+        {
+          text: action.text,
+          completed: false
+        }
+      ];
+    // ... other actions ...
+    default:
+      return state;
+  }
+}
+```
+
+Reducers 非常方便的独立测试，并且易于扩展用于表达复杂的更新逻辑。如果需要你可以更进一步的拆分成更小的 reducers。但是，你可能还享受这 React 本地状态带来的好处，或者不想安装其他的库。
+
+所以为什么不可以写一个 useReducer Hook，让它来帮助我们用 reducer 来管理我们组件的本地状态？一个它的简单版本可以像这样：
+
+```jsx
+function useReducer(reducer, initialState) {
+  const [state, setState] = useState(initialState);
+
+  function dispatch(action) {
+    const nextState = reducer(state, action);
+    setState(nextState);
+  }
+
+  return [state, dispatch];
+}
+```
+
+现在我们可以使用它在我们的组件中，让 reducer 驱动它的状态管理。
+
+```jsx
+function Todos() {
+  const [todos, dispatch] = useReducer(todosReducer, []);
+
+  function handleAddClick(text) {
+    dispatch({ type: "add", text });
+  }
+
+  // ...
+}
+```
+
+在复杂的组件中使用 reducer 来管理本地状态是常见的需求，我们已经在 React 中内置了 useReducer Hook。你可以在[HOOKS API 文档](https://reactjs.org/docs/hooks-reference.html)中找到这些 Hook
+
 ### Hooks API 的文档
 
 ### Hooks 常见问题
