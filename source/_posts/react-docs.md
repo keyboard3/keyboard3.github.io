@@ -1433,7 +1433,217 @@ function FriendStatus(props) {
 
 #### 使用 Effects 的技巧
 
-#### 下一步
+我们将继续讨论 React 资深用户关心的 useEffect 深度内容。你不必现在就去了解它们。你可以随时查看这个页面学习 Effect Hook 的更多的信息。
+
+**提示：使用多个 Effect 来分离关注点**
+在 Hooks 的动机这篇文章中我们提到了一个问题就是类生命周期经常包含不相关的逻辑，但是相关的逻辑被破坏到几个不同的方法。下面的代码是将之前的计数器和好友状态指示器合并在了一起。
+
+```jsx
+class FriendStatusWithCounter extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { count: 0, isOnline: null };
+    this.handleStatusChange = this.handleStatusChange.bind(this);
+  }
+
+  componentDidMount() {
+    document.title = `You clicked ${this.state.count} times`;
+    ChatAPI.subscribeToFriendStatus(
+      this.props.friend.id,
+      this.handleStatusChange
+    );
+  }
+
+  componentDidUpdate() {
+    document.title = `You clicked ${this.state.count} times`;
+  }
+
+  componentWillUnmount() {
+    ChatAPI.unsubscribeFromFriendStatus(
+      this.props.friend.id,
+      this.handleStatusChange
+    );
+  }
+
+  handleStatusChange(status) {
+    this.setState({
+      isOnline: status.isOnline
+    });
+  }
+  // ...
+```
+
+注意如何设置 document.title 的逻辑被分割到不同的函数中 componentDidMount 和 componentDidUpdate。订阅的逻辑同样被分割到 componentDidMount 和 componentWillUnmount 中。并且 componentDidMount 包含它们两个的代码。
+
+所以，Hooks 应该如何解决这个问题？就像你可以使用多次 State Hook 一样，你可以使用多个 effects。它让我们分割不相关的代码到不同的 effects 中。
+
+```jsx
+function FriendStatusWithCounter(props) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    document.title = `You clicked ${count} times`;
+  });
+
+  const [isOnline, setIsOnline] = useState(null);
+  useEffect(() => {
+    function handleStatusChange(status) {
+      setIsOnline(status.isOnline);
+    }
+
+    ChatAPI.subscribeToFriendStatus(props.friend.id, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(props.friend.id, handleStatusChange);
+    };
+  });
+  // ...
+}
+```
+
+Hooks 让我们基于所做的事情不同分割，而不是生命周期函数。React 将根据每个组件指定的 effect 顺序应用每个 effect。
+
+**解释： 为什么 Effect 运行在每次更新之后**
+如果你使用过 class，你可能会疑惑为什么 effect 清除阶段会在每次渲染之后，而不是当销毁组件的时候。让我们看下一个特殊的实例，为什么这个设计帮助我们创建组件，却很少出现 bug。
+
+在这一章开始的时候，我们介绍了实例 FriendStatus 组件显示朋友是否在线。我们的类从 this.props 读 friend.id,在组件创建之后订阅朋友的状态，在组件销毁之后取消订阅。
+
+```jsx
+  componentDidMount() {
+    ChatAPI.subscribeToFriendStatus(
+      this.props.friend.id,
+      this.handleStatusChange
+    );
+  }
+
+  componentWillUnmount() {
+    ChatAPI.unsubscribeFromFriendStatus(
+      this.props.friend.id,
+      this.handleStatusChange
+    );
+  }
+```
+
+当组件已经在前台页面，当用户属性发生变化时发生了什么？我们的组件将继续显示不同的好友的在线状态。这是一个 bug。在组件销毁时取消订阅错误的好友 ID，会造成对的好友在内存中，进行造成内存泄露。
+
+```jsx
+componentDidMount() {
+    ChatAPI.subscribeToFriendStatus(
+      this.props.friend.id,
+      this.handleStatusChange
+    );
+  }
+
+  componentDidUpdate(prevProps) {
+    // Unsubscribe from the previous friend.id
+    ChatAPI.unsubscribeFromFriendStatus(
+      prevProps.friend.id,
+      this.handleStatusChange
+    );
+    // Subscribe to the next friend.id
+    ChatAPI.subscribeToFriendStatus(
+      this.props.friend.id,
+      this.handleStatusChange
+    );
+  }
+
+  componentWillUnmount() {
+    ChatAPI.unsubscribeFromFriendStatus(
+      this.props.friend.id,
+      this.handleStatusChange
+    );
+  }
+```
+
+忘记正确的处理 componentDidUpdate 是 React 应用中最常见的来源。
+
+现在来思考使用 Hooks 的组件版本
+
+```jsx
+function FriendStatus(props) {
+  // ...
+  useEffect(() => {
+    // ...
+    ChatAPI.subscribeToFriendStatus(props.friend.id, handleStatusChange);
+    return () => {
+      ChatAPI.unsubscribeFromFriendStatus(props.friend.id, handleStatusChange);
+    };
+  });
+```
+
+它不会遇到这个 bug。（虽然我们没有对它们做任何改动）
+
+这里没有特殊的代码处理更新，因为 useEffect 默认处理掉了。它会在下一个 effect 应用之前清除上一个的 effects。为了说明这个，随着时间流逝组件会产生订阅和取消订阅的序列。
+
+```jsx
+// 挂载时的 { friend: { id: 100 } } 属性
+ChatAPI.subscribeToFriendStatus(100, handleStatusChange); // 第一次运行effect
+
+// 用{ friend: { id: 200 } }属性更新
+ChatAPI.unsubscribeFromFriendStatus(100, handleStatusChange); // 清除之前的effect
+ChatAPI.subscribeToFriendStatus(200, handleStatusChange); // 运行下一个
+
+//用 { friend: { id: 300 } }属性更新
+ChatAPI.unsubscribeFromFriendStatus(200, handleStatusChange); // 清除之前的effect
+ChatAPI.subscribeToFriendStatus(300, handleStatusChange); // 运行下一个
+
+// 销毁
+ChatAPI.unsubscribeFromFriendStatus(300, handleStatusChange); // 清除最后一个
+```
+
+这个行为默认保证了一致性，阻止了类组件由于缺失更新逻辑导致的常见 bug。
+
+**提示：通过跳过 Effects 来优化性能**
+在某些情况下，每次渲染之后清除或者应用 effect 会造成性能问题。在 class 组件中，我们通过在 componentDidUpdate 写入一个额外的比较 prevProps 和 prevState 来解决这个问题：
+
+```jsx
+componentDidUpdate(prevProps, prevState) {
+  if (prevState.count !== this.state.count) {
+    document.title = `You clicked ${this.state.count} times`;
+  }
+}
+```
+
+这是一个很常见的需求，内置到了 useEffect Hook API 中。如果你确认值在重复渲染时值没有发生变化，可以告诉 React 跳过应用 effect。为了做到它，可以传递一个数组作为 useEffect 的第二个可选参数：
+
+```jsx
+useEffect(() => {
+  document.title = `You clicked ${count} times`;
+}, [count]); // Only re-run the effect if count changes
+```
+
+在上面的例子中，我们传递[count]作为第二个参数。什么意思？如果 count 是 5,然后我们的组件内重复渲染时值仍然是 5，React 就会比较[5]和下一个渲染的[5]。因为数组的所有值都相等(5==5)，React 将会跳过 effect。这是实现了我们的优化。
+
+当我们重新渲染时值更新为 6，React 将对比上一个渲染的数组[5]和下一个渲染的[6]。这个时候 5!==6，所以 react 将重新应用 effect。如果数组中有多项，只要其中一个不一样就会重新运行 effect。
+
+对于有清除阶段的 effects 同样有效。
+
+```jsx
+useEffect(() => {
+  function handleStatusChange(status) {
+    setIsOnline(status.isOnline);
+  }
+
+  ChatAPI.subscribeToFriendStatus(props.friend.id, handleStatusChange);
+  return () => {
+    ChatAPI.unsubscribeFromFriendStatus(props.friend.id, handleStatusChange);
+  };
+}, [props.friend.id]); // 只有当值发生变化是才会重新订阅
+```
+
+未来，第二个参数可能在构建时期自动加上。
+
+> 注意
+> 如果你使用这个优化，保证数组包含组件内**随着时间变化并且被 effect 使用的所有值**。否则，你的代码将引用上一次渲染的泄露的值。参考[如何处理函数](https://reactjs.org/docs/hooks-faq.html#is-it-safe-to-omit-functions-from-the-list-of-dependencies)和[数组频繁变化是该怎么做](https://reactjs.org/docs/hooks-faq.html#what-can-i-do-if-my-effect-dependencies-change-too-often)学习更多相关内容。
+> 如果你只想 effect 被运和清除一次（在挂载和销毁时），你可以传递一个空数组作为第二个参数。这样告诉 React 你的 Effect 不依赖属性或者 state，所以它不需要重新运行。这种并不属于特殊情况-它遵循依赖数组来工作
+> 如果你传递一个空数组，在 effect 中的属性和状态将一直会有它们的初始值。当传递[]作为第二个参数非常接近 componentDidMount 和 componentWillUnmount 的心理模型。但是有[更好的方案](https://reactjs.org/docs/hooks-faq.html#what-can-i-do-if-my-effect-dependencies-change-too-often)来避免 effect 被重复运行。另外，不要忘记 React 回延迟运行 useEffect 直到浏览器已经绘制，一次做额外的工作就不成问题了。
+> 我们建议在 [eslint-plugin-react-hook](https://www.npmjs.com/package/eslint-plugin-react-hooks#installation) 包中使用 [exhaustive-dps](https://github.com/facebook/react/issues/14920)规则。当警告依赖不正确并且提出修复意见。
+
+#### 下一个步
+
+恭喜！这是一个很长的页面，但是希望在结尾你的关于 effects 的问题都被解答了。你已经学习了 State Hook 和 Effect Hook,将它们结合起来可以做很多事情。它们覆盖了 class 的大部分场景-如果没有，你可以[其他 Hooks](https://reactjs.org/docs/hooks-reference.html) 找到帮助
+
+我们也看到了 Hooks 如何解决了[动机](https://reactjs.org/docs/hooks-intro.html#motivation)提出的问题。我们看到 effect 如何避免在 componentDidUpdate 和 componentWillUnmount 的重复，将相关联的代码放在一起，帮助我们避免了许多 bugs。我们也看到了根据他们的功能来分离 effects，这写都是我们无法在 class 中做到的。
+
+此时你可能好奇 Hooks 是如何工作的。React 是如何在重复渲染时调用 useSate 找到对应的 state 变量？React 如何匹配每次更新时上一个和下一个 effect？**下一节我们将学习 Hooks 的规则-这对用 Hooks 工作非常必要**
 
 ### Hooks 的规则
 
