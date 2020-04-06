@@ -985,8 +985,248 @@ function Todos() {
 > 详细说明
 > 你可以在特定页面[Hooks API](https://reactjs.org/docs/hooks-reference.html)学到其他内置的 Hooks。
 
-
 ## 使用 State Hook
+
+Hooks 的介绍章节使用了下面这个案例：
+
+```jsx
+import React, { useState } from "react";
+
+function Example() {
+  // Declare a new state variable, which we'll call "count"
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>You clicked {count} times</p>
+      <button onClick={() => setCount(count + 1)}>Click me</button>
+    </div>
+  );
+}
+```
+
+我们将通过比较同等效果的 class 案例的代码来学习 Hooks。
+
+### 同等的 class 案例
+
+如果你之前在 React 中使用 class，下面的代码可能比较熟悉：
+
+```jsx
+class Example extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      count: 0
+    };
+  }
+
+  render() {
+    return (
+      <div>
+        <p>You clicked {this.state.count} times</p>
+        <button onClick={() => this.setState({ count: this.state.count + 1 })}>
+          Click me
+        </button>
+      </div>
+    );
+  }
+}
+```
+
+状态初始是{count:0}，当用户每次点击按钮调用 this.setState()增长 state.count 的值。我们将在整个页面中使用这个 class 片段。
+
+> 注意
+> 你可能会疑惑为什么我们使用计数器来代替其他更加实用的例子。在学习 Hooks 的第一步，它帮助我们帮助更加关注 API 本身。
+
+### Hooks 和函数组件
+
+复习一下，在 React 的函数组件像这样：
+
+```jsx
+const Example = props => {
+  // You can use Hooks here!
+  return <div />;
+};
+```
+
+或者这样
+
+```jsx
+function Example(props) {
+  // You can use Hooks here!
+  return <div />;
+}
+```
+
+你可能之前就已经知道这些叫做无状态组件。我们现在介绍如何在这里实用 React 状态，所以我们更喜欢称之为函数组件。
+
+Hooks 无法在 class 中工作。但是你可以用它们来代替 class 组件。
+
+### 什么是 Hook？
+
+我们的新案例在最开始的地方从 React 中导入 useState：
+
+```jsx
+import React, { useState } from "react";
+
+function Example() {
+  // ...
+}
+```
+
+**什么是 Hook？** Hook 是一个特殊的函数让你可以钩子钩进 React 的特性。比如，useState 让你添加 React 状态到函数组件的 Hook。我们后面可以学习到其他 Hook。
+**什么时候应该使用 Hook？** 之前你写一个函数组件意识到需要添加状态的时候，必须将它们转成 class。现在你可以在已存在的函数组件中使用 Hook。我们现在就可以使用它
+
+> 注意
+> 这里有一些特殊的规则告诉我们在一个组件中什么时候可以使用 useHook。去[Hooks 的规则](https://reactjs.org/docs/hooks-rules.html)学习它们。
+
+### 声明状态变量
+
+在类中，我们通过在构造函数中设置 this.state 的值为{count:0}来初始化 count。
+
+```jsx
+class Example extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      count: 0
+    };
+  }
+```
+
+在函数组件中，我们没有 this，所以我们无法赋值和读取 thi.state。但是我们可以直接在我们的组件中直接调用 useState Hook。
+
+```jsx
+import React, { useState } from 'react';
+
+function Example() {
+  // Declare a new state variable, which we'll call "count"
+  const [count, setCount] = useState(0);
+```
+
+**调用 useState 做了什么?** 它声明了状态变量。我们变量叫做 count，但是我们可以叫其他任何值，比如 banana。这是一种在函数调用间保留变量的方式-useState 与 class 提供的 this.state 功能一样。通常，函数退出时变量消失，但是状态变量会被 React 保留。
+**传递给 useState 需要哪些参数？** useState() Hook 的为一个参数是初始化的状态。不像 class，状态不必是一个对象。根据我们的需要可以是 number/string。在我们的案例里，我们使用 number 来记录用户点击了多少次，所以变量的初始状态是 0。（如果我们想在状态中存不同的变量，可以调用两次）
+**useState 返回什么？** 它返回了一对值：当前状态和函数更新方法。这是为什么代码是`const [count, setCount] = useState()`。类似于 class 中的 this.state.count 和 this.setState。如果你不熟悉使用的语法，可以看这个[页面的底部](https://reactjs.org/docs/hooks-state.html#tip-what-do-square-brackets-mean)
+
+现在我们知道 useState Hook 做了什么，我们的案例应该更加容易理解了。
+
+```jsx
+import React, { useState } from 'react';
+
+function Example() {
+  // Declare a new state variable, which we'll call "count"
+  const [count, setCount] = useState(0);
+```
+
+我们声明了 count 的状态变量，并设置了 0。React 将记住重复渲染时的当前值，并且给最新的值给我们的函数。如果我们想要更新当前 count 值，可以调用 setCount。
+
+> 注意
+> 你可能疑惑：为什么 useState 不命名 createState？
+> Create 不够精确，因为只有组件在第一次渲染时才需要创建。在下次渲染时，useState 给我们当前状态。否则它就不是 State 了。这也是为什么 Hook 的名字带 use 的原因。我们将在[Hooks](https://reactjs.org/docs/hooks-rules.html)学到为啥。
+
+### 读状态
+
+当我们在 class 中显示当前 count 值是，我们读 this.state.count
+
+```jsx
+<p>You clicked {this.state.count} times</p>
+```
+
+在函数中，我们可以直接使用 count
+
+```jsx
+<p>You clicked {count} times</p>
+```
+
+### 更新状态
+
+在 class 中，我们需要调用 this.setState()来更新 count 值：
+
+```jsx
+<button onClick={() => this.setState({ count: this.state.count + 1 })}>
+  Click me
+</button>
+```
+
+在函数中，我们已经有了 setCount 和 count 变量，所以我们不需要 this。
+
+```jsx
+<button onClick={() => setCount(count + 1)}>Click me</button>
+```
+
+### 概括
+
+让我们现在来概括一下我们一行行的学习东西以及检查下我们的理解
+
+```jsx
+ 1:  import React, { useState } from 'react';
+ 2:
+ 3:  function Example() {
+ 4:    const [count, setCount] = useState(0);
+ 5:
+ 6:    return (
+ 7:      <div>
+ 8:        <p>You clicked {count} times</p>
+ 9:        <button onClick={() => setCount(count + 1)}>
+10:         Click me
+11:        </button>
+12:      </div>
+13:    );
+14:  }
+```
+
+- 第 1 行：我们从 React 中导入 useState。它让我们在函数组件中存储本地状态
+- 第 4 行：在案例组件中，我们通过 useState Hook 来声明新的状态变量。它返回一对值，是我们给定的名称。我们叫变量为 count，因为它记录了按钮点击的次数。我们通过传 0 给 useState 作为初始状态。第二个返回的函数用来设置变量的。它使得我们可以更新 count，古名字为 setCount。
+- 第 9 行：当我们点击，我们调用 setCount 来设置一个新值。React 将重新渲染 Example 组件，并使用最新的 count 变量。
+
+刚开始看着可能有点多。不要着急！如果你不理解，你可以尝试从头到尾再读一遍。我们保证一旦里忘记 state 在 class 是如何工作的，你用新的眼光来看这些代码，将很容易理解了。
+
+**提示: 中括号的含义？**
+你可能注意到我们声明状态变量的时候用了中括号：
+
+```jsx
+const [count, setCount] = useState(0);
+```
+
+左边的名字不是 React API 的一部分。你可以命名自己的状态变量：
+
+```jsx
+const [fruit, setFruit] = useState("banana");
+```
+
+这个 js 语法叫做数组解构。它意味着我们创建了两个新的变量 fruit 和 setFruit，fruit 是 useState 返回的第一个值，setFruit 是第二个。等价代码如下。
+
+```jsx
+var fruitStateVariable = useState("banana"); // Returns a pair
+var fruit = fruitStateVariable[0]; // First item in a pair
+var setFruit = fruitStateVariable[1]; // Second item in a pair
+```
+
+当我们使用 useState 来声明状态变量，它返回一对-包含两个值的数组。第一个是当前值，第二个是更新它的函数。使用[0]和[1]来访问会造成一些困惑，因为它们有指定的含义。这也是为什么我们用数组解构来代替的原因。
+
+**提示: 使用多个状态变量**
+用[something,setSomething]来声明状态变量也是一个语法糖，因为如果我们想要更多，可以给状态变量指定不同的名字。
+
+```jsx
+function ExampleWithManyStates() {
+  // Declare multiple state variables!
+  const [age, setAge] = useState(42);
+  const [fruit, setFruit] = useState('banana');
+  const [todos, setTodos] = useState([{ text: 'Learn Hooks' }]);
+```
+
+在上面的组件中，我们有 age，fruit 和 todos 作为本地变量，并且我们可以独立的更新它们：
+
+```jsx
+function handleOrangeClick() {
+  // Similar to this.setState({ fruit: 'orange' })
+  setFruit("orange");
+}
+```
+
+你不必使用很多状态变量。状态表变量也可以是一个对象或者数组，所以你可以将数据分组。然而不像 class 的 this.setState，更新状态会直接替换而不是合并。
+
+我们提供了分割独立的状态变量更多的建议在[FAQ 中](https://reactjs.org/docs/hooks-faq.html#should-i-use-one-or-many-state-variables)
 
 ## 使用 Effect Hook
 
