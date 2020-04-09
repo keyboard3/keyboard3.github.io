@@ -1,676 +1,19 @@
 ---
-title: react-docs
+title: react-hooks
 top: false
 cover: false
 toc: true
 mathjax: true
-date: 2020-03-31 11:10:32
+date: 2020-04-09 01:12:43
 password:
 summary:
-tags: [react, 翻译]
+tags: [react, docs, 待完成]
 categories:
 ---
 
-[React-Docs](https://reactjs.org/docs/getting-started.html)
-
-## 开始
-
-## 主要概念
-
-## 高级指南
-
-### Accessibility
-
-### 代码分割
-
-### Context
-
-### Error Boundaries
-
-### Forwarding Refs
-
-Ref 转发是自动通过组件传递 ref 给它的子组件的一个技巧。它在应用中大多数组件是不需要使用的。但是，对于某些组件是需要的，尤其是重复使用的组件库。常见的场景描述如下。
-
-#### 转发 ref 给 DOM 组件
-
-来看`FancyButton`组件，它渲染原生`button`DOM 元素：
-
-```jsx
-function FancyButton(props) {
-  return <button className="FancyButton">{props.children}</button>;
-}
-```
-
-React 组件隐藏它们的实现，包括它们自己的渲染结果。其他组件使用`FancyButton`通常不需要获取 ref 来引用内部的`button`DOM 元素。这很好，因为它会阻止组件过度依赖它们的 DOM 结构。
-尽管`FeedStory`或`Comment`这种封装对于应用级组件比较理想，但像`FancyButton`或`MyTextInput`这类高度复用的`叶子`组件不方便。这些组件倾向于在应用中像`button`和`input`这类常规 DOM 一样使用，访问这些 DOM 节点可能无法避免去管理焦点，选中或者动画。
-**Ref 转发是一个可选特性，让组件可以获取 ref，并向下传递给子组件**
-在下面的例子中，`FancyButton`使用`React.forwardRef`去获取`ref`传递它，然后将它传递给渲染的 DOM `button`。
-
-```jsx
-const FancyButton = React.forwardRef((props, ref) => (
-  <button ref={ref} className="FancyButton">
-    {props.children}
-  </button>
-));
-
-// 你现在可以直接从DOM button上获取ref
-const ref = React.createRef();
-<FancyButton ref={ref}>Click me!</FancyButton>;
-```
-
-这样，组件使用`FancyButton`可以获取底层`button`DOM 节点，如果需要可以访问它-就像你直接使用 DOM 节点一样。
-这里一步一步解释了上面的例子发生了什么：
-
-- 我们通过调用`React.createRef`创建了[React ref](https://reactjs.org/docs/refs-and-the-dom.html)，并给它赋值了变量
-- 我们通过在 JSX 属性中指定它，向下传递 ref 到了`<FancyButton ref={ref}>`
-- React 传递`ref`给`forwardRef`内的`(props,ref)=>...`函数，将它作为第二个参数
-- 我们通过指定 JSX 属性将这个`ref`参数传递给`<button ref={ref}>`
-- 当 ref 被附加, `ref.current`将指向`<button>`DOM 节点。
-  > 注意
-  > 第二个参数`ref`只有在当你用`React.frowardRef`定义组件时才存在。常规的函数和类组件不会接受`ref`参数，并且 ref 也不会存在到 Props 中。
-  > Ref 转发不仅限于 DOM 组件。你也可以转发给 Class 实例。
-
----
-
-#### 组件库维护者注意
-
-**当你在组件库中使用 ref 转发时，建议将它作为一个大版本修改**。这是因为你的库可能会观察到不同的行为（取决于你 ref 赋值给谁，它是什么类型），它会导致应用崩溃因为其他库都依赖旧的行为。
-尽管`React.forwardRef`存在是允许有条件的使用，但也不推荐：它会改变你库的行为并且会造成他们升级 React 时，用户的应用被破坏。
-
----
-
-#### 在高级组件中转发 ref
-
-这个技巧对高级组件尤其有用（也叫做 HOC）。开始了解 logs 高阶组件，用于打印日志
-
-```jsx
-function logProps(WrappedComponent) {
-  class LogProps extends React.Component {
-    componentDidUpdate(prevProps) {
-      console.log("old props:", prevProps);
-      console.log("new props:", this.props);
-    }
-
-    render() {
-      return <WrappedComponent {...this.props} />;
-    }
-  }
-
-  return LogProps;
-}
-```
-
-"logProps"高级组件将所有`props`传递给包裹的组件，所以渲染结果将会一致。比如，我们使用这个高阶组件去记录所有传递给`fancy button`组件的属性
-
-```jsx
-class FancyButton extends React.Component {
-  focus() {
-    // ...
-  }
-
-  // ...
-}
-
-// 我们导出的是LogProps，而不是FancyButton
-// 虽然它渲染的是FancyButton
-export default logProps(FancyButton);
-```
-
-上面的例子有一个注意点：refs 将不会被传递。因为`ref`不是属性。就像`key`，它被 React 特殊处理。
-如果你添加 ref 到高阶组件，这个 ref 指向的是最外面的容器组件，而不是里面的包装组件。
-这意味着本来想指向`FancyButton`组件却实际上挂到了`LogProps`组件上
-
-```jsx
-import FancyButton from "./FancyButton";
-
-const ref = React.createRef();
-
-// 我们导入的FancyButton其实是LogProps高阶组件
-// 它渲染的结果是一样的
-// 我们的ref指向LogProps而不是内部的FancyButton
-// 这意味着我们无法调用这类方法ref.current.focus()
-<FancyButton label="Click Me" handleClick={handleClick} ref={ref} />;
-```
-
-幸运的是，我们可以通过`React.forwardRef`API 显示转发 ref 到内部的`FancyButton`组件上。`React.forwardRef`接受一个接收`props`和`ref`参数的渲染函数，并且返回 React 节点。例如：
-
-```jsx
-function logProps(Component) {
-  class LogProps extends React.Component {
-    componentDidUpdate(prevProps) {
-      console.log("old props:", prevProps);
-      console.log("new props:", this.props);
-    }
-
-    render() {
-      const { forwardedRef, ...rest } = this.props;
-
-      // Assign the custom prop "forwardedRef" as a ref
-      return <Component ref={forwardedRef} {...rest} />;
-    }
-  }
-
-  // 注意第二个参数ref由React.forwardRef提供
-  // 我们将ref作为正常属性传递给LogProps, e.g. "forwardedRef"
-  // 然后它可以被附加到组件上
-  return React.forwardRef((props, ref) => {
-    return <LogProps {...props} forwardedRef={ref} />;
-  });
-}
-```
-
-#### 在开发者工具中显示自定义名字
-
-`React.forwardRef`接收一个渲染函数。 React 开发者工具用这个函数决定为转发组件显示的内容。
-比如，下面的组件在开发者恐惧中将会显示"ForwardRef"
-
-```jsx
-const WrappedComponent = React.forwardRef((props, ref) => {
-  return <LogProps {...props} forwardedRef={ref} />;
-});
-```
-
-如果你命名了这个渲染函数，开发者工具将显示将包括这个名字（比如：”ForwardRef(myFunction)“）
-
-```jsx
-const WrappedComponent = React.forwardRef(function myFunction(props, ref) {
-  return <LogProps {...props} forwardedRef={ref} />;
-});
-```
-
-你可以设置函数的`displayName`属性包含这个组件的显示
-
-```jsx
-function logProps(Component) {
-  class LogProps extends React.Component {
-    // ...
-  }
-
-  function forwardRef(props, ref) {
-    return <LogProps {...props} forwardedRef={ref} />;
-  }
-
-  // 在开发者工具显示这个组件的名字非常有帮助
-  // e.g. "ForwardRef(logProps(MyComponent))"
-  const name = Component.displayName || Component.name;
-  forwardRef.displayName = `logProps(${name})`;
-
-  return React.forwardRef(forwardRef);
-}
-```
-
-### Fragments
-
-### Higher-Order Components
-
-### 集成其他库
-
-### JSX in Depth
-
-### 优化性能
-
-### Portals
-
-### Profiler
-
-### 没有 ES6 的 React
-
-### 没有 JSX 的 React
-
-### Reconciliation
-
-### Refs 和 DOM
-
-**Refs 提供了在渲染函数中访问 DOM 节点和 React 创建的元素的方法**
-在典型 React 数据流中，`props`是父组件和子组件交互的唯一方法。为了修改子组件，你需要用新的属性重新渲染它。然而，某些情况下，在典型数据流之外修改子组件是势在必行的。这个被修改的子组件应该是 React 元素的实例，也可能是 DOM 元素。针对这两种情况，React 提供了应急方案。
-
-#### 什么时候使用 Refs
-
-下面有一些 Refs 的好的使用案例：
-
-- 管理焦点，文本选中，或者媒体播放
-- 强制触发动画
-- 集成第三方的 DOM 库
-  避免对那些可以用声明完成的东西上使用 refs
-  比如，在 Dialog 组件上传递 isOpen 属性来代替调用 open()和 close()
-
-#### 不要过度使用 Refs
-
-你可能第一个想法使用 ref 来在 app 中实现。如果是这种情况，请花费一点时间思考它的状态应该属于组件树的哪一个层级。通常，将状态放到更高的层级上比较恰当。参考这个案例的[状态提升](https://reactjs.org/docs/lifting-state-up.html)的指南。
-
-> 注意：
-> 下面案例更新使用了 React 16.3 介绍的`React.createRef()`API。如果你使用了早期的 React,我们建议使用[callback refs](https://reactjs.org/docs/refs-and-the-dom.html#callback-refs)
-
-#### 创建 Refs
-
-使用`React.crateRef()`来创建 Refs，然后通过`ref`属性附加到 React 元素上。Refs 通常当组件被构建的时候将实例赋值给它，然后它们就在这种组件中被引用到。
-
-```jsx
-class MyComponent extends React.Component {
-  constructor(props) {
-    super(props);
-    this.myRef = React.createRef();
-  }
-  render() {
-    return <div ref={this.myRef} />;
-  }
-}
-```
-
-#### 访问 Refs
-
-当 render 中 ref 被传递给这个元素，这个节点的引用可以通过 ref 的 current 属性访问到。
-
-```jsx
-const node = this.myRef.current;
-```
-
-ref 根据 node 的类型不同值也不同：
-
-- 当 ref 属性被用到 HTML 元素上，用`React.createRef`构建的 ref 接收底层 DOM 元素作为 current 属性。
-- 当 ref 属性被使用到自定义类组件上，这个 ref 对象接收已挂载的组件实例作为 current 属性
-- **你可能无法使用 ref 属性对函数组件**因为它们没有实例
-
-下面的例子展示了差异
-
-**添加 Ref 给 DOM 元素**
-这个代码使用 ref 存储了一个 DOM 节点的引用
-
-```jsx
-class CustomTextInput extends React.Component {
-  constructor(props) {
-    super(props);
-    // 创建ref来存储textInput DOM元素
-    this.textInput = React.createRef();
-    this.focusTextInput = this.focusTextInput.bind(this);
-  }
-
-  focusTextInput() {
-    // 明确使用input元素DOM API来获取文本输入焦点
-    // Note: 我们访问current获取DOM节点
-    this.textInput.current.focus();
-  }
-
-  render() {
-    // 告诉React我们想要关联input的ref
-    // 我们在构造函数中创建`textInput`
-    return (
-      <div>
-        <input type="text" ref={this.textInput} />
-        <input
-          type="button"
-          value="Focus the text input"
-          onClick={this.focusTextInput}
-        />
-      </div>
-    );
-  }
-}
-```
-
-React 等到组件挂载后将 DOM 元素赋值到 ref 的 current 属性上，并且当组件卸载时会回退赋值 null。更新 ref 的时机发生在 componentDidMount 和 componentDidUpdate 生命周期之前。
-
-**添加 ref 到类组件**
-如果我们想要包装上面的 CustomTextInput，来模拟挂载之后立刻点击。我们可以使用 ref 获取自定义的 input 引用，然后手动调用它 focusTextInput 方法
-
-```jsx
-class AutoFocusTextInput extends React.Component {
-  constructor(props) {
-    super(props);
-    this.textInput = React.createRef();
-  }
-
-  componentDidMount() {
-    this.textInput.current.focusTextInput();
-  }
-
-  render() {
-    return <CustomTextInput ref={this.textInput} />;
-  }
-}
-```
-
-注意只有 CustomTextInput 被声明为 class 才生效
-
-```jsx
-class CustomTextInput extends React.Component {
-  // ...
-}
-```
-
-**Refs 和函数组件**
-默认情况下，你可能无法在函数组件上使用 ref，因为它没有实例
-
-```jsx
-function MyFunctionComponent() {
-  return <input />;
-}
-
-class Parent extends React.Component {
-  constructor(props) {
-    super(props);
-    this.textInput = React.createRef();
-  }
-  render() {
-    //无法正常工作
-    return <MyFunctionComponent ref={this.textInput} />;
-  }
-}
-```
-
-如果你想要别人从你的函数组件上获取 ref，你可以使用[forwardRef](https://reactjs.org/docs/forwarding-refs.html)(可以和[useImperativeHandle](https://reactjs.org/docs/hooks-reference.html#useimperativehandle)联合使用)，获取你可以将它转成类
-
-你可以做到，然而在函数组件内部使用 ref 属性一样是指向 DOM 元素和 class 组件
-
-```jsx
-function CustomTextInput(props) {
-  // textInput 一定要在这里定义，所以ref可以指向它
-  const textInput = useRef(null);
-
-  function handleClick() {
-    textInput.current.focus();
-  }
-
-  return (
-    <div>
-      <input type="text" ref={textInput} />
-      <input type="button" value="Focus the text input" onClick={handleClick} />
-    </div>
-  );
-}
-```
-
-#### 暴露 DOM Refs 给父组件
-
-在极少数情况下，你可能想要访问从父组件中访问子 DOM 节点。通常不建议这么做，因为会破坏组件的封装，但是偶尔在子节点的触发获取焦点、测量大小或者位置非常有用。
-
-你可以将 ref 添加到子组件上，它不是一个理想的方案。你可能只拿到 React 组件实例而不是 DOM 节点。另外，它在函数组价上不能正常工作。
-
-如果你在 React16.3 及更高的版本，我们推荐使用[ref 转发](https://reactjs.org/docs/forwarding-refs.html)
-.**ref 转发让组件可选暴露子组件的 ref 作为自己的 ref**。你可以从[在 ref 转发文档中](https://reactjs.org/docs/forwarding-refs.html#forwarding-refs-to-dom-components)找到如何让子组件暴露给父组件的详细案例
-
-如果你使用 React 16.2 及更低，或者你需要比提供 ref 转发更加灵活的能力，你可以使用[这个替代方案](https://gist.github.com/gaearon/1a018a023347fe1c2476073330cc5509)，传递 ref 作为特殊名字属性来向下传递 ref。
-
-可能的话，我们不建议暴露 DOM 节点，但是在应急的时候非常有用。注意这个方案需要你添加一些代码到子组件中。如果你对子组件的实现没有绝对的控制力，最后的选择是使用[findDOMNode](https://reactjs.org/docs/react-dom.html#finddomnode)，但是在严格模式下废弃且不推荐使用。
-
-#### 回调 Refs
-
-React 也支持"回调 refs"的方式来设置 refs，它让 refs 的设置和取消控制的粒度更细。
-
-跟 createRef()创建的 ref 赋值给 ref 属性不一样，你需要传递给 ref 属性一个函数。这个函数接收 React 组件或者是 HTML 节点元素作为它的参数，可以将它存储下来在其他地方访问。
-
-下面是通用案例：使用 ref 回调函数存储 DOM 节点引用到实例的属性上
-
-```jsx
-class CustomTextInput extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.textInput = null;
-
-    this.setTextInputRef = element => {
-      this.textInput = element;
-    };
-
-    this.focusTextInput = () => {
-      // 使用原生DOM API聚焦文本输入
-      if (this.textInput) this.textInput.focus();
-    };
-  }
-
-  componentDidMount() {
-    // 在挂载的时候自动聚焦
-    this.focusTextInput();
-  }
-
-  render() {
-    // 使用 ref 回调保存文本输入节点的引用
-    // 元素字段的实例(比如是 this.textInput).
-    return (
-      <div>
-        <input type="text" ref={this.setTextInputRef} />
-        <input
-          type="button"
-          value="Focus the text input"
-          onClick={this.focusTextInput}
-        />
-      </div>
-    );
-  }
-}
-```
-
-React 在组件挂载后将 DOM 元素传递给 ref 回调，然后当组件卸载时传递 null 给回调。在 componentDidMount 后者 componentDidUpdate 触发之前，Refs 会保证是最新的。
-
-你可以在组件之间传递回调的 refs，跟用 React.createRef()方式创建的 Refs 对象一样
-
-```jsx
-function CustomTextInput(props) {
-  return (
-    <div>
-      <input ref={props.inputRef} />
-    </div>
-  );
-}
-
-class Parent extends React.Component {
-  render() {
-    return <CustomTextInput inputRef={el => (this.inputElement = el)} />;
-  }
-}
-```
-
-在上面的例子中，Parent 将 ref 的回调函数 作为 CustomTextInput 的 inputRef 属性，然后这个 CustomTextInput 将这个函数传给<input>的属性。结果是，Parent 的 this.inputElement 将会被设置成与 CustomTextInput 的<input>元素相对应的 DOM 节点。
-
-#### 过时的 API：String Refs
-
-如果你之前使用过 React，你可能熟悉之前的 API，ref 的属性是 string。比如“textInput”，通过 this.refs.textInput 访问 DOM 节点。我们不建议使用 string 的 refs，它由[许多问题](https://github.com/facebook/react/pull/8333#issuecomment-271648615)，它已经过时，将在未来某个版本移除掉。
-
-> 注意
-> 如果你当时使用了 this.refs.txtInput 来访问 refs,我们建议使用另外的[回调方法](https://reactjs.org/docs/refs-and-the-dom.html#callback-refs)或者 [createRef API](https://reactjs.org/docs/refs-and-the-dom.html#creating-refs) 替换。
-
-#### 注意 refs 的回调
-
-如果 ref 的回调函数被定义成内联函数，它将会在更新期间被调用 2 次，首先是 null 然后是 DOM 元素。因为每次渲染会创建一个函数实例，所以 React 需要清除旧的 ref 并且设置一个新的。你可以将 ref 回调函数定义成绑定到 class 的函数来避免这个问题，但是注意大多数情况下不需要关心。
-
-### Render Props
-
-### 静态类型检查
-
-### 严格模式
-
-严格模式是为了突出应用中潜在的问题。像 Fragment 一样，严格模式不会渲染任何 UI。它会对后代元素进行额外的检查和警告。
-
-> 注意：
-> 严格模式检查只运行在开发模式下；它不会影响到生产环境构建
-> 你可以在你的应用任何地方开启严格模式。比如
-
-```jsx
-import React from "react";
-
-function ExampleApplication() {
-  return (
-    <div>
-      <Header />
-      <React.StrictMode>
-        <div>
-          <ComponentOne />
-          <ComponentTwo />
-        </div>
-      </React.StrictMode>
-      <Footer />
-    </div>
-  );
-}
-```
-
-在上面的例子中，严格模式检查不会影响到`Header`和`Footer`组件。但是，`ComponentOne`和`ComponentTwo`，作为它的后代将会被检查。
-严格模式有下面这些用处：
-[识别不安全生命周期的组件](https://reactjs.org/docs/strict-mode.html#identifying-unsafe-lifecycles)
-[警告过使用时的字符串 refAPI](https://reactjs.org/docs/strict-mode.html#warning-about-legacy-string-ref-api-usage)
-[警告使用废弃的 findDOMNode](https://reactjs.org/docs/strict-mode.html#warning-about-deprecated-finddomnode-usage)
-[检测不安全的 side effects](https://reactjs.org/docs/strict-mode.html#detecting-unexpected-side-effects)
-[检查过时的 Context API](https://reactjs.org/docs/strict-mode.html#detecting-legacy-context-api)
-React 未来会添加更多的功能来支持
-
-#### 识别不安全生命周期
-
-#### 警告过使用时的字符串 refAPI
-
-#### 警告使用废弃的 findDOMNode
-
-React 支持使用 findDOMNode 给定类的实例去 DOM 树种找。正常情况下你不需要，因为你可以[直接向 DOM 节点附加 ref](https://reactjs.org/docs/refs-and-the-dom.html#creating-refs)
-`findDOMNode`仍然可以在类组件中使用，但是它会破坏抽象，因为允许父组件能单独访问指定的已经渲染的子组件。它会造成重构困难，你不能改变组件的实现因为父组件可以访问到 DOM 节点。`findDOMNode`当 Fragment 包含多个子元素时，会只返回第一个非空节点。`findDOMNode`是一次阅读 API。当你访问时，它才会给你结果。如果子组件渲染了不同的节点，它无法识别这个变更。因此`findDOMNode`仅对单个不可变的组件上有效。
-另外你可以显式的将 ref 传递给你自定义的组件，并使用[ref 转发](https://reactjs.org/docs/forwarding-refs.html#forwarding-refs-to-dom-components)传递给 DOM 节点上
-你还可以给你的组件中包一个 DOM 节点，并直接附加上 ref
-
-```jsx
-class MyComponent extends React.Component {
-  constructor(props) {
-    super(props);
-    this.wrapper = React.createRef();
-  }
-  render() {
-    return <div ref={this.wrapper}>{this.props.children}</div>;
-  }
-}
-```
-
-> 注意
-> 在 CSS 中，如果你不想要某个节点不作为布局的一部分，可以使用`display:Contents`属性。（这个应该也是提出了跳过 findDOMNode 的一个方案吧）
-
-#### 检测不安全的 side effects
-
-#### 检查过时的 Context API
-
-### 用 PropTypes 来类型检查
-
-### 不受控的组件
-
-### Web 组件
-
-## API 文档
-
-### React 组件
-
-#### 介绍
-
-##### 组件生命周期
-
-##### 其他 API
-
-##### 类属性
-
-##### 实例属性
-
-#### 参考
-
-##### 公共使用的生命周期
-
-##### 渲染
-
-##### 构造函数
-
-##### componentDidMount
-
-##### componentDidUpdate
-
-##### componentWillUnmount
-
-##### 很少使用的生命周期
-
-##### shouldComponentUpdate
-
-##### static getDerivedStateFromProps()
-
-```
-static getDerivedStateFromProps(props, state)
-```
-
-##### getSnapshotBeforeUpdate
-
-##### Error boundaries
-
-##### static getDerivedStateFromError()
-
-##### componentDidCatch
-
-##### 遗留的生命周期
-
-##### UNSAFE_componentWillMount
-
-##### UNSAFE_componentWillReceiveProps
-
-##### UNSAFE_componentWillUpdate
-
-#### 其他 API
-
-##### setState
-
-##### forceUpdate
-
-#### 类属性
-
-##### 默认属性
-
-##### 显示名称
-
-#### 实例属性
-
-##### 属性
-
-##### 状态
-
-### ReactDOM
-
-#### 介绍
-
-##### 浏览器支持
-
-#### 参考
-
-##### render()
-
-##### hydrate()
-
-##### unmountComponentAtNode()
-
-##### findDOMNode()
-
-> 注意：
-> findDomNode 是用来访问底层 DOM 节点的应急方案。在大多数情况下，使用这个应急方案是不推荐的，因为它会破坏组件的抽象结构。[它已经在严格模式下废弃](https://reactjs.org/docs/strict-mode.html#warning-about-deprecated-finddomnode-usage)
-
-```
-ReactDOM.findDOMNode(component)
-```
-
-如果组件已经在 DOM 中挂载，它会返回浏览器底层 DOM 元素。这个方法在读取 DOM 的值有用，向表单元素以及执行 DOM 测量。\*在大多数情况下，你可以附加 DOM 节点的引用来避免使用它\*\*
-当组件渲染 null 或者 false，findDOMNode 会返回 null。当组件渲染 string,它会返回文本 DOM 节点的值。React16,组件可能是包含多个子节点的 fragment，在这种情况下，findDOMNode 将返回第一个非空子节点。
-
-> findDOMNode 值在已挂载的组件中有效（组件已经在 DOM 节点中）。如果你在组件没有挂载的时候调用（比如在 render()函数中调用 findDOMNode()，组件没有创建的时候），会抛出异常。
-> findDOMNode 不能再 function 组件中使用
-
-##### createPortal()
-
-### ReactDOMServer
-
-### DOM Elements
-
-### 合成 Event
-
-### Test 工具
-
-### Test Renderer
-
-### JS 环境要求
-
-### 词汇表
-
-## HOOKS
-
 > Hooks 是 React 16.8 新加的。它可以不写 Class 也能用到 State 以及 React 的其他特性
 
-### 介绍
+## 介绍
 
 ```jsx
 import React, { useState } from "react";
@@ -694,11 +37,11 @@ function Example() {
 > 注意
 > React 16.8 是支持 Hooks 的第一个版本。升级的时候，不要忘记升级所有的包，包括 React DOM。 React Native 从 0.59 版本支持 HOOKS
 
-#### 视频介绍
+### 视频介绍
 
 在 React 2018 会议上，Sophie Alpert 和 Dan Abramov 介绍了 Hooks，跟着 Ryan Florence 演示如何使用它们去重构一个应用。看下面的视频
 
-#### 不用破坏性改动
+### 不用破坏性改动
 
 在我们继续之前，注意 Hooks：
 
@@ -712,11 +55,11 @@ function Example() {
 
 **如果你只想要学习 Hooks，直接跳到下一节！**你可以继续读这一页学习更多关于为什么我们添加 Hooks，以及我们如何使用它们不需要重写自己的应用
 
-#### 动机
+### 动机
 
 Hooks 解决了我们过去 5 年写过和维护的上千个 React 组件的各种不相关的问题。无论你在学习 React，还是每天使用，或者使用者类似的组件模型的框架，你可能遇到过这些问题。
 
-#### 很难在组件之间复用状态逻辑
+### 很难在组件之间复用状态逻辑
 
 React 没有提供将可复用的行为附加到组件的方式（比如，链接到 Store）。如果你使用 React，你可能比较熟悉像[render props](https://reactjs.org/docs/render-props.html)和[higher-order components](https://reactjs.org/docs/higher-order-components.html)。但是这些方案需要使用它们需要重构你的组件，它们会使得你的代码非常难理解。如果你在 React DevTools 中观察过 React 应用，你将会发现由 Providers，consumers，higher-order 组件,render props，以及其他抽象包裹的组件回调地狱。尽管我们可以在[DevTools](https://github.com/facebook/react-devtools/pull/503)过滤它们，这些指向了一个更深的问题：React 需要为共享状态逻辑提供更好的原生途径。
 
@@ -724,7 +67,7 @@ React 没有提供将可复用的行为附加到组件的方式（比如，链�
 
 我们在[构建自己的 Hooks](https://reactjs.org/docs/hooks-custom.html)讨论更多的内容
 
-#### 复杂组件变得更难理解
+### 复杂组件变得更难理解
 
 我们经常开始维护一个简单的组件，但是逐渐状态变得难以管理且有许多副作用。每个生命周期函数经常不相关的逻辑混在一起。比如，组件可能在 componentDidMount 和 componentDidUpdate 中执行相同的获取数据操作。但是相同的 componentDidMount 函数也包含其他逻辑比如设置时间按监听，还需要在 componentWillUnmount 清理它。相互关联的代码需要在不同的地方一起变更，但是完全不相同的代码却要合并到一个方法里。这非常容易制造 bugs 和不一致的地方。
 
@@ -734,7 +77,7 @@ React 没有提供将可复用的行为附加到组件的方式（比如，链�
 
 我们将在[Using the Effect Hook.](https://reactjs.org/docs/hooks-effect.html#tip-use-multiple-effects-to-separate-concerns)更多的讨论它们。
 
-#### 类会使得人和机器弄混
+### 类会使得人和机器弄混
 
 除了会使得代码重用和 diamante 组织变得更困难之外，我们发现类是学习 React 的最大屏障。你需要理解`this`是如何在 JS 中工作的，它与许多语言的运行方式都不一样。你需要记着绑定事件处理函数。没有问题的[语法提案](https://babeljs.io/docs/en/babel-plugin-transform-class-properties/)，代码也非常的冗余。人们很好的理解 props，state,以及从上而下的数据流，但是很难理解类。React 的 class 和 function 组件的区别，使用过的即使是有经验的开发者之间也会存在分歧。
 
@@ -745,7 +88,7 @@ React 没有提供将可复用的行为附加到组件的方式（比如，链�
 > 案例
 > [Hooks 一览](https://reactjs.org/docs/hooks-overview.html) 是一个很好的学习 Hooks 的地方
 
-#### 渐进兼容策略
+### 渐进兼容策略
 
 > 总结：没有计划从 React 中删除类
 
@@ -757,14 +100,14 @@ React 没有提供将可复用的行为附加到组件的方式（比如，链�
 
 我们意图让 Hooks 能够覆盖所用 class 的场景，但是我们仍然会对 class 支持。在 Facebook，我们有上千个用 class 的组件，我们绝对没有计划去重写它们。相反，我们会在新的代码中将 Hooks 与 class 一起使用。
 
-### Hooks 一览
+## Hooks 一览
 
 Hooks 是[向后兼容](https://reactjs.org/docs/hooks-intro.html#no-breaking-changes)。这个页面为有经验 React 用户提供了 Hooks 概览。
 
 > 详细介绍
 > 读这篇[动机](https://reactjs.org/docs/hooks-intro.html#motivation)来学习为什么我们要在 React 使用 Hooks。
 
-#### State Hook
+### State Hook
 
 这个案例渲染了一个计数器。当你点击按钮，他就会增加值：
 
@@ -811,7 +154,7 @@ React 提供了一些内置的 Hooks 比如 useState。你也可以创建你自�
 > 详细说明
 > 你可以在专用的页面[Using the State Hook.](https://reactjs.org/docs/hooks-state.html)来学习更多的 state Hook 知识。
 
-#### Effect Hook
+### Effect Hook
 
 你之前可能已经执行过数据获取，订阅，或者手动在 React 组件中改变 DOM。我们叫这些行为为”副作用“（或者说是作用），因为它们可以影响其他组件并且在一次渲染过程中就结束。
 
@@ -900,7 +243,7 @@ Hooks 让你在一个组件中管理相关联的副作用。（比如添加和�
 > 详细解释
 > 你可以在下面专用的页面[使用 Effect Hook](https://reactjs.org/docs/hooks-effect.html)来学习更多的 UseEffect
 
-#### 构建自己的 Hooks
+### 构建自己的 Hooks
 
 有时候，我们想要在组件之间重用状态逻辑。之前，有两种方案：[高阶组件](https://reactjs.org/docs/higher-order-components.html)和[渲染属性](https://reactjs.org/docs/render-props.html)。自定义 Hooks 可以做到，切不需要在组件树中添加更多的组件。
 
@@ -962,7 +305,7 @@ function FriendListItem(props) {
 > 详细说明
 > 你可以在指定文章[构建自己的 Hooks](https://reactjs.org/docs/hooks-custom.html)看到更多内容
 
-#### 其他 HOOKS
+### 其他 HOOKS
 
 这里有一些很少使用的内置 Hooks，你可能会觉得有用。比如，[useContext](https://reactjs.org/docs/hooks-reference.html#usecontext)让你不需要嵌套就可以订阅 React 上下文。
 
@@ -985,7 +328,7 @@ function Todos() {
 > 详细说明
 > 你可以在特定页面[Hooks API](https://reactjs.org/docs/hooks-reference.html)学到其他内置的 Hooks。
 
-### 使用 State Hook
+## 使用 State Hook
 
 Hooks 的介绍章节使用了下面这个案例：
 
@@ -1007,7 +350,7 @@ function Example() {
 
 我们将通过比较同等效果的 class 案例的代码来学习 Hooks。
 
-#### 同等的 class 案例
+### 同等的 class 案例
 
 如果你之前在 React 中使用 class，下面的代码可能比较熟悉：
 
@@ -1038,7 +381,7 @@ class Example extends React.Component {
 > 注意
 > 你可能会疑惑为什么我们使用计数器来代替其他更加实用的例子。在学习 Hooks 的第一步，它帮助我们帮助更加关注 API 本身。
 
-#### Hooks 和函数组件
+### Hooks 和函数组件
 
 复习一下，在 React 的函数组件像这样：
 
@@ -1062,7 +405,7 @@ function Example(props) {
 
 Hooks 无法在 class 中工作。但是你可以用它们来代替 class 组件。
 
-#### 什么是 Hook？
+### 什么是 Hook？
 
 我们的新案例在最开始的地方从 React 中导入 useState：
 
@@ -1080,7 +423,7 @@ function Example() {
 > 注意
 > 这里有一些特殊的规则告诉我们在一个组件中什么时候可以使用 useHook。去[Hooks 的规则](https://reactjs.org/docs/hooks-rules.html)学习它们。
 
-#### 声明状态变量
+### 声明状态变量
 
 在类中，我们通过在构造函数中设置 this.state 的值为{count:0}来初始化 count。
 
@@ -1124,7 +467,7 @@ function Example() {
 > 你可能疑惑：为什么 useState 不命名 createState？
 > Create 不够精确，因为只有组件在第一次渲染时才需要创建。在下次渲染时，useState 给我们当前状态。否则它就不是 State 了。这也是为什么 Hook 的名字带 use 的原因。我们将在[Hooks](https://reactjs.org/docs/hooks-rules.html)学到为啥。
 
-#### 读状态
+### 读状态
 
 当我们在 class 中显示当前 count 值是，我们读 this.state.count
 
@@ -1138,7 +481,7 @@ function Example() {
 <p>You clicked {count} times</p>
 ```
 
-#### 更新状态
+### 更新状态
 
 在 class 中，我们需要调用 this.setState()来更新 count 值：
 
@@ -1154,7 +497,7 @@ function Example() {
 <button onClick={() => setCount(count + 1)}>Click me</button>
 ```
 
-#### 概括
+### 概括
 
 让我们现在来概括一下我们一行行的学习东西以及检查下我们的理解
 
@@ -1228,7 +571,7 @@ function handleOrangeClick() {
 
 我们提供了分割独立的状态变量更多的建议在[FAQ 中](https://reactjs.org/docs/hooks-faq.html#should-i-use-one-or-many-state-variables)
 
-### 使用 Effect Hook
+## 使用 Effect Hook
 
 > Effect Hook 让你在函数组件中执行副作用的操作
 
@@ -1261,7 +604,7 @@ function Example() {
 > 小技巧
 > 如果你熟悉 React 类声明周期函数，你可以考虑将 UseEffect 作为 componentDidMount, componentDidUpdate，componentWillUnmount 作为声明周期的联合。
 
-#### 不会清理副作用
+### 不会清理副作用
 
 有时候，我们想要在更新 DOM 之后运行一些额外的代码。网络请求，手动 DOM 更新，打印这些都是不需要清除副作用的案例。我们认为这些运行完之后可以立刻忘掉它们的存在。让我们来比较类和 HOOKS 的副作用的表现
 **使用类的案例**
@@ -1347,7 +690,7 @@ function Example() {
 > 技巧
 > 不像`componentDidMount`和`componentDidUpdate`，`useEffect`不会阻塞浏览器更新屏幕。它会让你的应用感觉跟更加流畅。大部分 effect 不需要同步执行。但是某些情况需要这么做（比如测量布局），它被独立的抽成[useLayoutEffect](https://reactjs.org/docs/hooks-reference.html#uselayouteffect)Hook，与`useEffect`做区分。
 
-#### 清理副作用
+### 清理副作用
 
 早期，我们认为副作用不需要清理。但是有一些副作用需要。比如**我们需要设置订阅**一些额外的数据源。这种情况下，清理非常重要以免造成内存泄露！让我们比较类组件和 Hooks 是如何做的。
 **使用类的案例**
@@ -1425,13 +768,13 @@ function FriendStatus(props) {
 > 注意
 > 我们不需要在 effect 返回有名函数。我们叫`cleanup`以描述意图，但是你也可以返回箭头函数或者叫其他函数名
 
-#### 概况
+### 概况
 
 我们学习到组件渲染之后不同的 effect 表现。有些 effect 需要被清理，所以它返回一个函数。
 其他 effect 不需要清理，所以不返回任何东西。
 **如果你觉得你对 effect hook 工作有不错的理解，或者如果你感到不知所措，你可以跳到下一页 Hooks 的规则**
 
-#### 使用 Effects 的技巧
+### 使用 Effects 的技巧
 
 我们将继续讨论 React 资深用户关心的 useEffect 深度内容。你不必现在就去了解它们。你可以随时查看这个页面学习 Effect Hook 的更多的信息。
 
@@ -1637,7 +980,7 @@ useEffect(() => {
 > 如果你传递一个空数组，在 effect 中的属性和状态将一直会有它们的初始值。当传递[]作为第二个参数非常接近 componentDidMount 和 componentWillUnmount 的心理模型。但是有[更好的方案](https://reactjs.org/docs/hooks-faq.html#what-can-i-do-if-my-effect-dependencies-change-too-often)来避免 effect 被重复运行。另外，不要忘记 React 回延迟运行 useEffect 直到浏览器已经绘制，一次做额外的工作就不成问题了。
 > 我们建议在 [eslint-plugin-react-hook](https://www.npmjs.com/package/eslint-plugin-react-hooks#installation) 包中使用 [exhaustive-dps](https://github.com/facebook/react/issues/14920)规则。当警告依赖不正确并且提出修复意见。
 
-#### 下一个步
+### 下一个步
 
 恭喜！这是一个很长的页面，但是希望在结尾你的关于 effects 的问题都被解答了。你已经学习了 State Hook 和 Effect Hook,将它们结合起来可以做很多事情。它们覆盖了 class 的大部分场景-如果没有，你可以[其他 Hooks](https://reactjs.org/docs/hooks-reference.html) 找到帮助
 
@@ -1645,7 +988,7 @@ useEffect(() => {
 
 此时你可能好奇 Hooks 是如何工作的。React 是如何在重复渲染时调用 useSate 找到对应的 state 变量？React 如何匹配每次更新时上一个和下一个 effect？**下一节我们将学习 Hooks 的规则-这对用 Hooks 工作非常必要**
 
-### Hooks 的规则
+## Hooks 的规则
 
 Hooks 是 JS 函数，但是当使用它们时你需要遵循两个原则。我们提供了[linter plugin](https://www.npmjs.com/package/eslint-plugin-react-hooks)来强制自动执行这些规则。
 
@@ -1660,7 +1003,7 @@ Hooks 是 JS 函数，但是当使用它们时你需要遵循两个原则。我�
 
   遵循这条规则，确保在源码中组件的状态逻辑都是清晰可见的
 
-#### ESLint Plugin
+### ESLint Plugin
 
 我们发布了 ESLint 插件叫做[eslint-plugin-react-hooks](https://www.npmjs.com/package/eslint-plugin-react-hooks)强制遵循这两个规则。如果你喜欢尝试你可以添加插件到你的项目中：
 在[Crate React APP](https://reactjs.org/docs/create-a-new-react-app.html#create-react-app)中默认包含这个插件。
@@ -1686,7 +1029,7 @@ npm install eslint-plugin-react-hooks --save-dev
 
 你可以跳过直接去下一章，怎么写自己的 Hooks。在这个页面，我们将继续解释这些规则背后的原因。
 
-#### 解释
+### 解释
 
 在学习初期，我们在一个组件中使用了多个 State 和 Effect。
 
@@ -1769,11 +1112,11 @@ useEffect(function persistForm() {
 
 **注意，如果你装了插件就不需要担心这个问题**。不过你现在知道了为什么 Hooks 这么工作，也知道了这个规则是为了避免什么问题。
 
-#### 下一步
+### 下一步
 
 最后，我们准备开始学习些构建自己的 Hooks！自定义 Hooks 让你可以组合 React 提供的 Hooks 到那你自己的抽象，让它可以在组件之间复用状态逻辑。
 
-### 构建自己的 Hooks
+## 构建自己的 Hooks
 
 构建自己的 Hooks 让你可以提取组件的逻辑到可重用的函数。
 
@@ -1828,7 +1171,7 @@ function FriendListItem(props) {
 
 在这之前，React 在组件之间有两种方式共享状态逻辑：[渲染属性](https://reactjs.org/docs/render-props.html) 和[高阶组件](https://reactjs.org/docs/higher-order-components.html)。我们将看到 Hooks 如何不在组件树中添加更多的组件解决这些问题。
 
-#### 提取自定义 Hook
+### 提取自定义 Hook
 
 当我们想要在两个 js 函数中共享逻辑时，我们提取它到第三方函数中。组件和 Hooks 都是函数，所以这同样可以生效！
 
@@ -1873,7 +1216,7 @@ function useFriendStatus(friendID) {
 
 现在让我们来看下如何使用我们自己的自定义 Hook
 
-#### 使用自定义 Hook
+### 使用自定义 Hook
 
 我们开始的目标是从 FriendStatus 和 FriendListItem 组件中删除重复逻辑。它们两个都想知道朋友是否在线。
 现在我们可以提取逻辑到 useFriendStatus Hook，然后就可以使用它。
@@ -1950,7 +1293,7 @@ const isRecipientOnline = useFriendStatus(recipientID);
 
 它让我们知道当前选中的朋友是否在线。如果我们选中另外一个好友，然后会更新这个 recipientID 状态变量，我们 useFriendStatus Hook 将之前的选中的好友取消订阅，并订阅当前新选中的一个。
 
-#### useYourImagination()
+### useYourImagination()
 
 自定义 Hooks 提供了之前无法在 React 上实现的灵活共享状态逻辑。你可以自定义 Hooks 来覆盖更大范围的用户场景，比如表单处理，动画，声明订阅，定时器和可能更多我们无法考虑到的场景。更重要的是，你创建 Hooks 就像使用 React 内置特性一样简单。
 
@@ -2009,13 +1352,13 @@ function Todos() {
 
 在复杂的组件中使用 reducer 来管理本地状态是常见的需求，我们已经在 React 中内置了 useReducer Hook。你可以在[HOOKS API 文档](https://reactjs.org/docs/hooks-reference.html)中找到这些 Hook
 
-### Hooks API 的文档
+## Hooks API 的文档
 
 如果你是 Hooks 的新手，你应该首先查看[概览](https://reactjs.org/docs/hooks-overview.html)。你也可以在 Hooks 中找到有用的信息。
 
-#### 基础的 Hooks
+### 基础的 Hooks
 
-##### useState
+#### useState
 
 ```jsx
 const [state, setState] = useState(initialState);
@@ -2085,7 +1428,7 @@ const [state, setState] = useState(() => {
 
 注意 React 仍然可能在跳过更新之前渲染该组件。大可不必担心，因为 React 不会对组件树进行深度对比。如果你在渲染期间做了很昂贵的计算，你应该使用 useMemo 进行优化。
 
-##### useEffect
+#### useEffect
 
 ```jsx
 useEffect(didUpdate);
@@ -2095,7 +1438,7 @@ useEffect(didUpdate);
 **effects 的执行时机**
 **有条件的触发 effect**
 
-##### useContext
+#### useContext
 
 ```jsx
 const value = useContext(MyContext);
@@ -2103,28 +1446,20 @@ const value = useContext(MyContext);
 
 **将它和 Context.Provider 放在一起**
 
-#### Additional Hooks
+### Additional Hooks
 
-##### useReducer
+#### useReducer
 
-##### useCallback
+#### useCallback
 
-##### useMemo
+#### useMemo
 
-##### useRef
+#### useRef
 
-##### useImperativeHandle
+#### useImperativeHandle
 
-##### useLayoutEffect
+#### useLayoutEffect
 
-##### useDebugValue
+#### useDebugValue
 
-### Hooks 常见问题
-
-## TESTING
-
-## 并发模式（实验中）
-
-## 贡献
-
-## 常见问题
+## Hooks 常见问题
