@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-03-30 10:47:26
 password:
 summary:
-tags: [nextjs, 翻译, 未完待续]
+tags: [nextjs, 翻译, 进行中]
 categories:
 ---
 
@@ -268,6 +268,79 @@ export default (req, res) => {
 ### 自定义 PostCSS 配置
 
 ### 自定义 Server
+
+通常，你使用哪个 next start 来启动 next 服务。为了使用自定义路由模式，也可以百分百编程的方式启动服务。
+
+> 在决定使用自定义服务之前请思考下只有当 Next.js 的路由无法满足你 APP 要求时才能使用。自定义服务将会删除重要的性能优化，比如无服务器功能以及[自动静态优化](https://nextjs.org/docs/advanced-features/automatic-static-optimization)
+
+看下下面的自定义服务案例：
+
+```js
+// server.js
+const { createServer } = require("http");
+const { parse } = require("url");
+const next = require("next");
+
+const dev = process.env.NODE_ENV !== "production";
+const app = next({ dev });
+const handle = app.getRequestHandler();
+
+app.prepare().then(() => {
+  createServer((req, res) => {
+    // Be sure to pass `true` as the second argument to `url.parse`.
+    // This tells it to parse the query portion of the URL.
+    const parsedUrl = parse(req.url, true);
+    const { pathname, query } = parsedUrl;
+
+    if (pathname === "/a") {
+      app.render(req, res, "/b", query);
+    } else if (pathname === "/b") {
+      app.render(req, res, "/a", query);
+    } else {
+      handle(req, res, parsedUrl);
+    }
+  }).listen(3000, err => {
+    if (err) throw err;
+    console.log("> Ready on http://localhost:3000");
+  });
+});
+```
+
+> server.js 不会通过 babel 或者 webpack。确保文件的语法和源与你当前运行的 node 版本兼容。
+
+然后，为了运行自定义 server，你需要更新 scripts 和 package.json。比如
+
+```json
+"scripts": {
+  "dev": "node server.js",
+  "build": "next build",
+  "start": "NODE_ENV=production node server.js"
+}
+```
+
+自定义服务使用以下导入将 Next.js 应用和 server 连接起来。
+上面的 next 导入函数接收的是下面的参数对象：
+
+- dev: Boolean - 是否在开发模式下启动 Next.js。 默认是 false
+- dir: String - Next.js 项目的路径，默认是.
+- quiet: Boolean - 隐藏包含服务信息的错误消息。默认是 false
+- conf: object - 这个对象和在 Next.config.js 使用的一样的对象，默认是{}
+
+返回的 app 可以让 Next.js 根据需求处理请求了
+
+#### 关闭文件路由
+
+默认，Next 用路径名匹配文件名来为在 pages 文件夹下的每个文件提供服务。如果你项目使用了自定义 server，这个行为可能会导致多个路径都可以为相同的内容提供服务，可能为 SEO 和用户体验造成问题。
+
+```js
+module.exports = {
+  useFileSystemPublicRoutes: false
+};
+```
+
+> 注意 useFileSystemPublicRoutes 是简单的让服务端渲染禁用了文件路由；客户端路由可能仍可以访问路由。当使用这个选项时，你应该避免使用手动编程的方式连接到页面
+
+> 你可能还需要配置客户端路由，防止客户端跳转到这个文件路由。参考[Router.beforePopState](https://nextjs.org/docs/api-reference/next/router#routerbeforepopstate)
 
 ### 自定义`App`
 
