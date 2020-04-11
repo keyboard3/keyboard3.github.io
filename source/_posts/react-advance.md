@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-04-09 01:12:36
 password:
 summary:
-tags: [react, docs, 翻译, 待完成]
+tags: [react, docs, 翻译, 进行中]
 categories:
 ---
 
@@ -337,6 +337,96 @@ key 是为唯一可以传递给 Fragment 的属性。未来，我们可以添加
 ### 集成其他库
 
 ### JSX in Depth
+
+从根本上上来说，JSX 只是提供了 React.createElement(component, props, ...children)函数的语法糖。JSX 代码这样：
+
+```jsx
+<MyButton color="blue" shadowSize={2}>
+  Click Me
+</MyButton>
+```
+
+编译结果:
+
+```jsx
+React.createElement(MyButton, { color: "blue", shadowSize: 2 }, "Click Me");
+```
+
+如果它没有子元素可以使用自我闭合的标签形式，所以：
+
+```jsx
+<div className="sidebar" />
+```
+
+编译结果：
+
+```jsx
+React.createElement("div", { className: "sidebar" });
+```
+
+如果你想要测试某些具体的 jsx 语法编译成的 js 代码，你可以尝试使用[在线的 Babel 编译器](https://babeljs.io/repl/#?presets=react&code_lz=GYVwdgxgLglg9mABACwKYBt1wBQEpEDeAUIogE6pQhlIA8AJjAG4B8AEhlogO5xnr0AhLQD0jVgG4iAXyJA)
+
+#### 指定 React 元素类型
+
+JSX 标签第一部分决定了 React 元素的类型。
+
+大写字母开头的类型表示这个 JSX 标签是一个 React 组件。这些标签会被编译成对这个命名的变量的直接饮用，所以如果你使用 <Foo /> 表达式，Foo 一定能够要在作用域内。
+
+#### React 必须在作用域内
+
+因为 JSX 编译成 React.createElement 的调用，React 库必须要包含在 JSX 代码的作用域内。
+
+例如，虽然 React 和 CustomButton 没有被 js 直接引用，但是它们还是需要被导入：
+
+```jsx
+import React from "react";
+import CustomButton from "./CustomButton";
+
+function WarningButton() {
+  // return React.createElement(CustomButton, {color: 'red'}, null);
+  return <CustomButton color="red" />;
+}
+```
+
+如果你不使用 JS 打包器而是用 `<script>` 标签挂载 React，它也会被在作用域挂载成 React 全局变量。
+
+#### JSX 类型使用.符号语法
+
+你也可以在 JSX 中使用.符号形式来引用一个 React 组件。
+
+#### 用户定义的组件必须是大写开头
+
+...
+
+#### 在运行时选择类型
+
+...
+
+---
+
+#### JSX 中的属性
+
+#### JS 表达式作为属性
+
+#### 字符串字面量
+
+#### 属性默认是 True
+
+#### 展开属性
+
+---
+
+#### JSX 的子元素
+
+#### 字符串字面量
+
+#### JSX 子元素
+
+#### JS 表达式作为子元素
+
+#### 函数作为子元素
+
+#### Booleans, Null, and Undefined 会被忽略
 
 ### 优化性能
 

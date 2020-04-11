@@ -706,7 +706,34 @@ export default MyImage;
 
 ### 设置自定义构建目录
 
+你可以对自定义构建目录制定名字来替换.next
+
+打开 next.config.js 并添加 distDir 配置：
+
+```js
+module.exports = {
+  distDir: "build"
+};
+```
+
+现在如果你运行 next build 将使用 build 来替换默认的.next 目录。
+
+> distDir 不应该是你项目之外的目录。比如 ../build 是一个无效目录。
+
 ### 配置构建 ID
+
+Next.js 使用构建时的生成的约定的 id 来识别你部署的应用是哪个版本。当在多服务上会造成麻烦（每个服务上都会执行 next build）。为了保证在各个构建之间保持同一个静态 id，你可以自己定义 id。
+
+打开 next.config.js 并添加 generateBuildId 函数
+
+```js
+module.exports = {
+  generateBuildId: async () => {
+    // You can, for example, get the latest git commit hash here
+    return "my-build-id";
+  }
+};
+```
 
 ### 配置 onDemandEntries
 
