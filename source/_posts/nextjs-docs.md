@@ -495,7 +495,51 @@ export default Page
 
 ### 环境变量
 
+为了添加环境变量给 JS bundle，打开 next.config.js 文件并添加 env 配置：
+
+```js
+module.exports = {
+  env: {
+    customKey: "my-value"
+  }
+};
+```
+
+现在你可以在你的代码中访问 process.env.customKey。例如：
+
+```js
+function Page() {
+  return <h1>The value of customKey is: {process.env.customKey}</h1>;
+}
+
+export default Page;
+```
+
+Next.js 将在构建时使用 my-value 替换 process.env.customKey。尝试对 process.env 进行解构不会工作，因为 webpack [DefinePlugin](https://webpack.js.org/plugins/define-plugin/) 的性质。
+
+例如，下面一行
+
+```jsx
+return <h1>The value of customKey is: {process.env.customKey}</h1>;
+```
+
+将会被替换成：
+
+```jsx
+return <h1>The value of customKey is: {"my-value"}</h1>;
+```
+
 ### 自定义页面扩展
+
+和[@next/mdx](https://github.com/zeit/next.js/tree/canary/packages/next-mdx)的作用一样，mdx 支持页面以文件.mdx 结尾。你可以配置 pages 目录下那些扩展可以认为是页面。
+
+打开 next.config.js 并添加 pageExtensions 配置：
+
+```js
+module.exports = {
+  pageExtensions: ["mdx", "jsx", "js", "ts", "tsx"]
+};
+```
 
 ### 用资源前缀来支持 CDN
 
@@ -532,6 +576,20 @@ module.exports = {
 ### 压缩
 
 ### 静态优化指示器
+
+当页面符合自动静态化优化条件时，我们会显示一个指示器让你知道。
+
+它非常有用，如果页面符合条件，它会在开发环境下立刻执行自动静态优化并让你知道。
+
+在某些情况下，指示器没用，比如在 electron 应用上工作时。为了在 next.config.js 删除并在 devIndicators 下禁用 autoPrerender 配置
+
+```js
+module.exports = {
+  devIndicators: {
+    autoPrerender: false
+  }
+};
+```
 
 ### 运行时配置
 
