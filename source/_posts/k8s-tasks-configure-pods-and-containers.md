@@ -1,5 +1,5 @@
 ---
-title: k8s-tasks-configure-pods-and-containers
+title: 配置pod和container
 top: false
 cover: false
 toc: true
@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-04-11 14:18:18
 password:
 summary:
-tags: [k8s, 翻译, 进行中]
+tags: [k8s, tasks, 翻译, 进行中]
 categories:
 ---
 

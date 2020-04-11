@@ -1,5 +1,5 @@
 ---
-title: react-docs
+title: react docs
 top: false
 cover: false
 toc: true

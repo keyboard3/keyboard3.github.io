@@ -1,5 +1,5 @@
 ---
-title: nextjs-learn
+title: next.js learn
 top: false
 cover: false
 toc: true

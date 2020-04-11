@@ -1,5 +1,5 @@
 ---
-title: nextjs-docs
+title: next.js docs
 top: false
 cover: false
 toc: true

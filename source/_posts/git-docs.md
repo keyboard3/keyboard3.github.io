@@ -1,5 +1,5 @@
 ---
-title: git-docs
+title: git docs
 top: false
 cover: false
 toc: true

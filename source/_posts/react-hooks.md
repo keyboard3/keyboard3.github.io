@@ -1,5 +1,5 @@
 ---
-title: react-hooks
+title: react hooks
 top: false
 cover: false
 toc: true

@@ -1,5 +1,5 @@
 ---
-title: mdn-web-api
+title: web api
 top: false
 cover: false
 toc: true

@@ -1,5 +1,5 @@
 ---
-title: k8s-concepts-workloads
+title: 工作负载
 top: false
 cover: false
 toc: true
@@ -7,11 +7,9 @@ mathjax: true
 date: 2020-04-11 13:31:36
 password:
 summary:
-tags: [k8s, 翻译, 进行中]
+tags: [k8s, concepts, 翻译, 进行中]
 categories:
 ---
-
-# 工作负载
 
 ## Pods
 

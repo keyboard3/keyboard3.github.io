@@ -1,5 +1,5 @@
 ---
-title: github-blog
+title: github blog 简单思考
 top: false
 cover: false
 toc: true

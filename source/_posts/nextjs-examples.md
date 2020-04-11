@@ -1,5 +1,5 @@
 ---
-title: nextjs-examples
+title: next.js examples
 top: false
 cover: false
 toc: true
