@@ -21,7 +21,7 @@ categories:
 
 当用户缩小窗口或者切换其他 tab 页的时候，这个 API 会发送[visibilitychange](https://developer.mozilla.org/en-US/docs/Web/Events/visibilitychange)事件告诉监听者页面状态发生变更。你可以检测这个事件执行不同的行为。例如，如果你的 web 应用正在播放视频，当用户切换 tab 进入后台时暂停视频，在用户回到页面时重新播放视频。用户不会丢失它的播放位置，这个视频的音轨不会干扰到新 tab 页面的声音，并且用户在这个期间不会错误任何视频。
 
-<iframe>的可见性状态和福文档一样。使用css属性(像display:none;)不会触发可见性事件或者改变document包含的frame的状态。
+iframe 的可见性状态和福文档一样。使用 css 属性(像 display:none;)不会触发可见性事件或者改变 document 包含的 frame 的状态。
 
 ### 使用场景
 
@@ -40,7 +40,7 @@ categories:
 
 区别于 Page 可见性 API，用户代理通常有很多策略来减轻后台或隐藏 tab 带来的性能影响。这些包括:
 
-- 许多浏览器会停止向后台 tab 和隐藏的 iframe 发送[requestAnimationFrame()])(https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame)回调，为了提高性能以及电池寿命。
+- 许多浏览器会停止向后台 tab 和隐藏的 iframe 发送[requestAnimationFrame()](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame)回调，为了提高性能以及电池寿命。
 - 计时器像[setTimeout()](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout)在后台/未激活 tab 中是节流的，帮助提高性能。详情见[延迟超过指定值的原因](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout#Reasons_for_delays_longer_than_specified)。
 - 在现代浏览器（firefox58+，Chrome 57+）中基于预算的后台超时限制是有效的，对后台计时器 CPU 使用率做了额外的限制。在现代浏览器的这类操作都相似，详细看下面：
   - 在 Firefox 中，后台选项卡的窗口每个都有自己的时间预算（时间单位是毫秒） -- 预算最大最小值分贝是 +50 毫秒和-150 毫秒。chrome 类似，预算单位是秒。
@@ -144,5 +144,9 @@ if (typeof document.addEventListener === "undefined" || hidden === undefined) {
       startSimulation();
     }
   }
-  document.addEventListener("visibilitychange",handleVisibilityChange, false);
+  document.addEventListener("visibilitychange", handleVisibilityChange, false);
+  ```
+
+```
+
 ```

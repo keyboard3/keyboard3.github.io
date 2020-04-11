@@ -115,7 +115,7 @@ deploy:
 search:
   path: search.xml
   field: post
-  content: false
+  content: true
 
 # 中文链接转拼音
 permalink_pinyin:
