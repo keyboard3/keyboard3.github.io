@@ -358,6 +358,10 @@ module.exports = {
 
 # API 文档
 
+## CLI
+
+## next/router
+
 ## next/head
 
 我们暴露内置组件用于将元素添加到页面的顶部
@@ -416,6 +420,8 @@ export default IndexPage
 > 卸载组件时会清除在`head`上的内容，保证每个页面需要的`head`都是干净完整定义，不用关心会有其他页面的 Head 干扰它
 
 > `title`和`meta`元素是`Head`的直接子组件，或者包裹在`<React.Fragment>`下，否则 meta 标签不会正确的被服务端渲染找到
+
+## next/amp
 
 ## Data Fetching
 
@@ -483,7 +489,87 @@ export default Page
 
 ### Related
 
-## 其他
+## next.config.js
+
+### 介绍
+
+### 环境变量
+
+### 自定义页面扩展
+
+### 用资源前缀来支持 CDN
+
+### 构建目标
+
+### 自定义 webpack 配置
+
+### 压缩
+
+### 静态优化指示器
+
+### 运行时配置
+
+> 通常你想要为你的配置使用构建时环境变量。原因是因为运行时配置会增加渲染和初始化的开销，并且与自动静态化不兼容。
+> 当使用 [serverless 目标](https://nextjs.org/docs/api-reference/next.config.js/build-target#serverless-target) 时运行时配置无效
+
+为了添加运行时配置到你的应用，打开 next.config.js 并添加 publicRuntimeConfig 和 serverRuntimeConfig 配置。
+
+```js
+module.exports = {
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+    mySecret: "secret",
+    secondSecret: process.env.SECOND_SECRET // Pass through env variables
+  },
+  publicRuntimeConfig: {
+    // Will be available on both server and client
+    staticFolder: "/static"
+  }
+};
+```
+
+将只在服务端使用的运行时配置放到 serverRuntimeConfig 下
+
+需要在客户端和服务端都要访问的变量应该放在 publicRuntimeConfig
+
+> 依赖 publicRuntimeConfig 的页面必须使用 getInitialProps 来退出自动静态化。没有 getInitialProps，运行时配置将不再任何页面或者页面中的组件上有效。
+
+使用 next/config 来访问运行时配置，比如
+
+```jsx
+import getConfig from "next/config";
+
+// Only holds serverRuntimeConfig and publicRuntimeConfig
+const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
+// Will only be available on the server-side
+console.log(serverRuntimeConfig.mySecret);
+// Will be available on both server-side and client-side
+console.log(publicRuntimeConfig.staticFolder);
+
+function MyImage() {
+  return (
+    <div>
+      <img src={`${publicRuntimeConfig.staticFolder}/logo.png`} alt="logo" />
+    </div>
+  );
+}
+
+export default MyImage;
+```
+
+### 禁止 x-powered-by
+
+### 禁止 ETag 生成
+
+### 设置自定义构建目录
+
+### 配置构建 ID
+
+### 配置 onDemandEntries
+
+### 忽略 TypeScript 错误
+
+### exportPathMap
 
 ### 错误
 
