@@ -493,6 +493,50 @@ export default Page
 
 ### 介绍
 
+想要自定义 next.js 的高级行为，你可以在项目的根目录下创建 next.config.js（在 package.json 旁边）。
+
+next.config.js 是 Node.js 的常规模块，而不是 json 文件。它被 Next.js 的服务和它的构建阶段使用，并不会再浏览器构建时使用。
+
+在下面的实例中：
+
+```js
+module.exports = {
+  /* 在这里配置选项 */
+};
+```
+
+你也可以使用函数：
+
+```js
+module.exports = (phase, { defaultConfig }) => {
+  return {
+    /* 在这里配置选项 */
+  };
+};
+```
+
+phase 是已经加载配置的当前上下文。你可以在[这里](https://github.com/zeit/next.js/blob/canary/packages/next/next-server/lib/constants.ts#L1-L4)看到有哪些 Phases。Phases 可以从 next/constants 导入：
+
+```js
+const { PHASE_DEVELOPMENT_SERVER } = require("next/constants");
+
+module.exports = (phase, { defaultConfig }) => {
+  if (phase === PHASE_DEVELOPMENT_SERVER) {
+    return {
+      /* 只在开发时用的配置 */
+    };
+  }
+
+  return {
+    /* 除了开发环境下的其他所有阶段的配置*/
+  };
+};
+```
+
+带注释的行是让你可以放配置的地方。
+
+但是所有的配置都不强制要求，不需要知道每个配置都是干什么的。相反，你搜索你需要的属性去启用和修改，它将会显示你想要的结果。
+
 ### 环境变量
 
 为了添加环境变量给 JS bundle，打开 next.config.js 文件并添加 env 配置：
@@ -542,6 +586,21 @@ module.exports = {
 ```
 
 ### 用资源前缀来支持 CDN
+
+为了设置 CDN，你可以设置一个资源前缀并配置你 CDN 源去解析为 Next.js 项目运行所在的域名。
+
+打开 next.config.js 并添加 assetPrefix 配置：
+
+```js
+const isProd = process.env.NODE_ENV === "production";
+
+module.exports = {
+  // Use the CDN in production and localhost for development.
+  assetPrefix: isProd ? "https://cdn.mydomain.com" : ""
+};
+```
+
+Next.js 将在加载的脚本自动使用你的前缀，但是对 public 目录下文件夹下的资源没有作用；如果你想要这写资源也用 CDN，你需要自己处理这个前缀。一种可以在你组件中因环境变量引入的前缀可以参考这个[案例](https://github.com/zeit/next.js/tree/canary/examples/with-universal-configuration-build-time)
 
 ### 构建目标
 
