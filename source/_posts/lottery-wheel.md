@@ -11,6 +11,7 @@ tags: [js, animate, library, 翻译]
 categories:
 ---
 
+[原文](https://github.com/fralonra/lottery-wheel)
 一个帮助你实现转盘抽奖游戏的库。使用了[Snap.svg](https://github.com/adobe-webplatform/Snap.svg)和[anime.js](https://github.com/juliangarnier/anime/)。
 [demo](https://fralonra.github.io/lottery-wheel/demo/)
 
@@ -85,7 +86,7 @@ const wheel = new Wheel({
 | el             | 当轮子被挂载的元素.[详情](https://github.com/fralonra/lottery-wheel#el)                                                   | Object   | -          |
 | data           | 奖品数组。[详情](https://github.com/fralonra/lottery-wheel#data)                                                          | Array    | -          |
 | pos            | 转轮的左上角与父元素关联 (el 元素)                                                                                        | Array    | [0,0]      |
-| 半径           | 转轮的半径, px                                                                                                            | Number   | 100        |
+| radius         | 转轮的半径, px                                                                                                            | Number   | 100        |
 | buttonText     | 按钮上的文字                                                                                                              | String   | 'Draw'     |
 | fontSize       | 奖品上的文字大小                                                                                                          | Number   | (自动生成) |
 | buttonWidth    | button 的宽度,px                                                                                                          | Number   | 50         |
@@ -126,7 +127,7 @@ const wheel = new Wheel({
 });
 ```
 
-它将会生成下面带默认 options 的转轮。每个奖品奖项都有相同的机会被抽奖，程序将穿改进 4 个奖品对象，text 属性被 data 数组中的字符串设置，chance 属性自动为 1。
+它将会生成下面带默认 options 的转轮。每个奖品奖项都有相同的机会被抽奖，程序创建 4 个奖品对象，text 属性被 data 数组中的字符串设置，chance 属性自动为 1。
 ![](https://github.com/fralonra/lottery-wheel/blob/master/doc/images/data.png)
 你也可以自定义每个奖品的对象。奖品对象的属性在[这里](https://github.com/fralonra/lottery-wheel#prize-object)被列出来
 
@@ -152,9 +153,9 @@ const wheel = new Wheel({
 
 当奖品被领取成功之后，回调函数被调用。
 
-参数 | 描述 | 类型
----|---|---
-data | 领取奖品对象 | Object
+| 参数 | 描述         | 类型   |
+| ---- | ------------ | ------ |
+| data | 领取奖品对象 | Object |
 
 ```js
 const wheel = new Wheel({
@@ -187,10 +188,10 @@ const wheel = new Wheel({
 
 当鼠标滑过按钮时会调用
 
-参数 | 描述 | 类型
----|---|---
-anime | 引用 animejs。看这个使用[文档](https://github.com/juliangarnier/anime) | -
-button | 参考按钮所在的捕获元素 | Object
+| 参数   | 描述                                                                   | 类型   |
+| ------ | ---------------------------------------------------------------------- | ------ |
+| anime  | 引用 animejs。看这个使用[文档](https://github.com/juliangarnier/anime) | -      |
+| button | 参考按钮所在的捕获元素                                                 | Object |
 
 ```js
 const wheel = new Wheel({
@@ -208,13 +209,13 @@ const wheel = new Wheel({
 
 奖品对象
 
-属性 | 描述 | 类型 | 默认
----|---|---|---
-text | 奖品名字 | String | ''
-chance | 奖品可以被领取的可能性。值越高，奖品被领取的概率越大。概率计算的公式 `probability = 1 * chance / (每个chance的和` | Number | 1
-color | 奖品的背景颜色 (重写转轮的 color.prize) | String | -
-fontColor | 文本的颜色 (重写转轮的 color.fontColor) | String | -
-fontSize | 文本的大小（将重写转轮的 fontSize） | Number | -
+| 属性      | 描述                                                                                                               | 类型   | 默认 |
+| --------- | ------------------------------------------------------------------------------------------------------------------ | ------ | ---- |
+| text      | 奖品名字                                                                                                           | String | ''   |
+| chance    | 奖品可以被领取的可能性。值越高，奖品被领取的概率越大。概率计算的公式 `probability = 1 * chance / (每个chance的和)` | Number | 1    |
+| color     | 奖品的背景颜色 (重写转轮的 color.prize)                                                                            | String | -    |
+| fontColor | 文本的颜色 (重写转轮的 color.fontColor)                                                                            | String | -    |
+| fontSize  | 文本的大小（将重写转轮的 fontSize）                                                                                | Number | -    |
 
 ```js
 const wheel = new Wheel({
@@ -314,11 +315,11 @@ const wheel = new Wheel({
 使用 image 属性让你可以通过对象的设置，使用一个已存在的资源来渲染转轮。它生成图像 svg 元素，并支持 jpeg,png 和 svg 格式。
 属性
 
-参数 | 描述 | 类型
----|---|---
-turntable | 转盘图片 | String
-button | 按钮的图片。宽度由 buttonWidth 控制，剩下的按照比列缩放。默认在转盘的中心 | String
-offset | 按钮的 y 轴的偏移。如果是负，按钮向上移动 | Number
+| 参数      | 描述                                                                      | 类型   |
+| --------- | ------------------------------------------------------------------------- | ------ |
+| turntable | 转盘图片                                                                  | String |
+| button    | 按钮的图片。宽度由 buttonWidth 控制，剩下的按照比列缩放。默认在转盘的中心 | String |
+| offset    | 按钮的 y 轴的偏移。如果是负，按钮向上移动                                 | Number |
 
 这里的案例显示当时用仓库下的/doc/images 的图片的效果：
 
@@ -335,3 +336,8 @@ const wheel = new Wheel({
 ```
 
 ![](https://github.com/fralonra/lottery-wheel/blob/master/doc/images/image.png)
+
+## 最后
+
+我开了分支，为它支持了 remoteDrawn 属性，支持了奖品有远程接口支持的功能
+[keyboard3/lottery-wheel](https://github.com/keyboard3/lottery-wheel)
