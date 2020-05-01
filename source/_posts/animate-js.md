@@ -11,6 +11,8 @@ tags: [js, animate, 翻译]
 categories:
 ---
 
+[原文](https://animejs.com/documentation/)
+
 ## 目标
 
 ### CSS 选择器

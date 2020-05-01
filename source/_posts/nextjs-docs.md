@@ -25,7 +25,305 @@ categories:
 - Node.js 10 以上
 - MacOS，windows(包括 WSL),以及 Linux
 
+### 设置
+
+我们建议使用 create-next-app 来创建 Next.js 应用，它将自动为你设置一切。运行以下命令创建项目：
+
+```
+npm init next-app
+# or
+yarn create next-app
+```
+
+安装完成之后，跟着说明启动开发服务。尝试修改 pages/index.js 并在你浏览器上查看结果。
+
+### 手动设置
+
+在你的项目中安装 next,react 和 react-dom：
+
+```
+npm install next react react-dom
+```
+
+打开 package.json 并添加下面的 scripts
+
+```js
+"scripts": {
+  "dev": "next",
+  "build": "next build",
+  "start": "next start"
+}
+```
+
+下面脚本指向开发应用的不同阶段：
+
+- dev - 运行 next 在开发模式下启动 Next.js
+- build - 运行 next build 为生产模式构建应用
+- start - 运行 next start 启动 Next.js 生产服务
+
+Next.js 是围绕页面概念构建的。 页面是从在 pages 目录下的.js,.jsx,.ts 或者.tsx 文件中导出的 react 组件
+
+页面是基于它们的文件名来关联路由的。例如 pages/about.js 被映射成 /about. 你甚至可以在文件名上添加动态路由参数。
+
+在你的项目中创建 pages 目录
+
+使用下面的内容填充到 ./pages/index.js
+
+```jsx
+function HomePage() {
+  return <div>Welcome to Next.js!</div>;
+}
+
+export default HomePage;
+```
+
+运行 npm run dev 来开始开发应用。它启动一个开发服务在 http://localhost:3000
+
+通过 http://localhost:3000 来查看你的应用
+
+到此为止，我们获得：
+
+- 自动编译和打包 （通过 webpack 和 babel）
+- 热加载
+- 静态生成和服务端渲染 ./pages/
+- 静态文件服务 ./public/ 映射成 /
+
 ## 基础功能
+
+### Pages
+
+> 这个文档基于 Next.js 9.3 及以上，如果你使用的是旧版，参考 [之前的文档](https://nextjs.org/docs/tag/v9.2.2/basic-features/pages)
+
+在 Next.js 中，一个页面就是一个组件，它们从 pages 目录文件下的 .js, jsx, .ts 或者 .tsx 文件中导出。每个页面基于它们的文件名与路由关联。
+
+例如：如果你创建 pages/about.js，并导出下面的 React 组件，它将可以通过 /about 访问。
+
+```jsx
+function About() {
+  return <div>About</div>;
+}
+
+export default About;
+```
+
+### Pages 使用动态路由
+
+Next.js 支持页面使用动态路由。比如，如果你创建文件名叫做 pages/posts/[id].js, 然后它就可以通过 posts/1, posts/2,等等。
+
+> 学学习更多动态路由知识，查看[动态路由文档](https://nextjs.org/docs/routing/dynamic-routes)
+
+### 预渲染
+
+默认，Next.js 对每个页面预渲染。这意味着 Next.js 会提前为每个页面生成 HTML，而不是由客户端 JavaScript 来生成。预渲染会带来更好的性能和 SEO。
+
+每个生成的 HTML 只关联那个页面需要的最少 js 代码。当页面被浏览器加载完毕，它的 js 代码运行会使得页面完全可交互。（这个过程被叫做水合/hydration）
+
+#### 两种预渲染的方式
+
+Next.js 有两种预渲染方式：静态生成和服务端渲染。这区别在于为页面生成 HTML 的时机。
+
+- **静态生成（建议）**：HTML 在构建时被生成，并可以被每个请求复用。
+- **服务端渲染**：HTML 在每次请求时都会生成
+
+重要的是，Next.js 让你可以选择你每个页面的预渲染方式。你可以针对大部分页面使用静态生成方式以及针对特殊请求使用服务端渲染来，创建一个“混合” Next.js 应用。
+
+我们建议使用静态生成来代替服务端渲染来提高性能。静态生成的页面可以被 CDN 缓存来提高启动性能。然而，在某些情况下，服务端渲染可能是唯一的选择。
+
+最后，你可以始终将客户端渲染和静态生成或者服务端渲染一起使用。这意味着页面的某些部分可以完全的由客户端代码渲染。为了进一步学习，可以查看[数据获取](https://nextjs.org/docs/basic-features/data-fetching#fetching-data-on-the-client-side)文档
+
+### 静态生成（建议）
+
+如果页面使用静态生成，页面的 HTML 将在构建时被生成。这意味着，在生产环境下，页面 HTML 在你运行 next build 时生成。这个 HTML 将会被每个请求复用，它也可以被 CDN 缓存。
+
+在 Next.js 中，你可以带着数据或者不带数据生成页面，让我们来看看这两个情况。
+
+#### 不带数据静态生成
+
+默认情况下，Next.js 不带数据静态生成预渲染页面。下面是案例：
+
+```jsx
+function About() {
+  return <div>About</div>;
+}
+
+export default About;
+```
+
+注意这个页面不需要获取任何额外数据去预渲染。这个场景比如：Next.js 在构建时对每个 page 生成单个 HTML。
+
+#### 带数据静态生成
+
+有些页面在预渲染时获取额外数据。这里有两个情况，一种或者两种都适用。每种情况，那你可以适用 Next.js 提供的特殊功能:
+
+1. 页面内容依赖外部数据：适用 getStaticProps
+2. 页面路径依赖外部数据：适用 getStaticPaths (通常也用到 getStaticProps)
+
+##### 场景 1：页面内容依赖额外数据
+
+例如：你博客页面可能需要从 CMS（内容管理系统）中获取博客列表。
+
+```jsx
+// TODO: 需要在页面预渲染之前通过调用 api 获取 posts
+function Blog({ posts }) {
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li>{post.title}</li>
+      ))}
+    </ul>
+  );
+}
+
+export default Blog;
+```
+
+为了在预渲染时获取这个数据，Next.js 允许在这个文件下导出 getStaticProps 的异步函数。这个函数在构建时调用，然后在预渲染时将获取的数据传递给页面的 props。
+
+```jsx
+// 你可以使用任何数据获取库
+import fetch from "node-fetch";
+
+function Blog({ posts }) {
+  // 渲染 posts...
+}
+
+// 这个函数在构建时被调用
+export async function getStaticProps() {
+  // 调用外部api获得posts
+  const res = await fetch("https://.../posts");
+  const posts = await res.json();
+
+  // 返回 { props: posts }, 这个 Blog component
+  // 在构建时将接收 `posts` 作为属性
+  return {
+    props: {
+      posts,
+    },
+  };
+}
+
+export default Blog;
+```
+
+为了学习 getStaticProps 如何工作，查看[数据获取文档](https://nextjs.org/docs/basic-features/data-fetching#getstaticprops-static-generation)
+
+##### 场景 2：页面路径依赖额外数据
+
+Next.js 允许你通过动态路由来创建页面。比如，你可以创建 pages/posts/[id].js 来基于 id 来显示单个博客。当你访问 posts/1 是博客将获得 id:1 的参数来显示博客内容。
+
+> 为了进一步学习动态路由，查看[动态路由文档](https://nextjs.org/docs/routing/dynamic-routes)
+
+然而，你可能需要额外的数据提供 id 来预渲染。
+例如：假设你只在数据库中添加了 id:1 的文章。这种情况下，你值需要在构建时渲染 posts/1。
+
+随后，你可能添加了 id:2 的文章，然后你想要同样的预渲染 posts/2。
+
+所以你预渲染的页面路径需要依赖外部数据。为了处理它，Next.js 让你在动态页面( pages/posts/[id].js )中导出异步函数 getStaticPaths。这个函数在构建时调用，并让你可以指定那些路径你想要预渲染。
+
+```js
+import fetch from "node-fetch";
+
+// 在构建时被调用
+export async function getStaticPaths() {
+  // 调用外部api获取文章列表
+  const res = await fetch("https://.../posts");
+  const posts = await res.json();
+
+  // 获取我们想要渲染的文章路径
+  const paths = posts.map((post) => `/posts/${post.id}`);
+
+  // 我们只在构建时预渲染这些路径
+  // { fallback: false } 因为着其他路径将是404
+  return { paths, fallback: false };
+}
+```
+
+同样在 pages/posts/[id].js 中，你需要导出 getStaticProps 来根据 id 获取数据预渲染页面。
+
+```jsx
+import fetch from "node-fetch";
+
+function Post({ post }) {
+  // Render post...
+}
+
+export async function getStaticPaths() {
+  // ...
+}
+
+// This also gets called at build time
+export async function getStaticProps({ params }) {
+  // params contains the post `id`.
+  // If the route is like /posts/1, then params.id is 1
+  const res = await fetch(`https://.../posts/${params.id}`);
+  const post = await res.json();
+
+  // Pass post data to the page via props
+  return { props: { post } };
+}
+
+export default Post;
+```
+
+#### 什么时候使用静态生成？
+
+我们建议尽可能的使用静态生成，因为那你的页面只被构建一次且可以被 CDN 缓存，可以使得比每次请求都服务端渲染快很多。
+
+许多页面类型都可以使用静态生成，包括：
+
+- 营销页面
+- 博客文章
+- 电子商务产品列表
+- 帮助和文档
+
+你应该问你自己：“我们可以在用户请求之前预渲染页面吗？” 如果答案是 yes，然后你应该选择静态生成。
+
+另一方面，如果在用户请求之前无法预渲染，静态生成则不是一个好建议。可能你的页面频繁根据数据刷新，页面内容在每次请求时改变。
+
+这种情况，你可以渲染以下任何操作。
+
+- 使用带客户端渲染的静态生成：你可以跳过页面的某些部分预渲染，然后使用客户端渲染来填充它们。
+- 使用服务端渲染：Next.js 在每次请求预渲染。它会很慢，因为页面无法被 CDN 缓存，但是预渲染页面是实时刷新的。
+
+### 服务端渲染
+
+> 也叫做 SSR 或者动态渲染
+
+如果页面使用服务端渲染，页面 HTML 每次请求时生成。
+
+为了让页面使用服务端渲染，你需要导出 getServerSideProps 异步函数。这个函数将在每次请求时在服务端被调用。
+
+例如，假设你的页面需要用最新的数据预渲染（通过外部的 api 获取数据）。你应该写下 getServerSideProps 来获取数据传递给 Page。
+
+```js
+import fetch from "node-fetch";
+
+function Page({ data }) {
+  // Render data...
+}
+
+// This gets called on every request
+export async function getServerSideProps() {
+  // Fetch data from external API
+  const res = await fetch(`https://.../data`);
+  const data = await res.json();
+
+  // Pass data to the page via props
+  return { props: { data } };
+}
+
+export default Page;
+```
+
+如你所见，getServerSideProps 和 getStaticProps 很像，但是区别的是，getServerSideProps 是每个请求都会调用而不是在构建时。
+
+### 总结
+
+我们讨论了 Next.js 中的两种预渲染方式。
+
+- 静态生成（推荐）：页面在构建时生成并每次请求都可以复用。为了让页面使用静态生成，导出纯页面组件，或者导出 getStaticProps（如果需要导出 getStaticPaths）。会在用户请求之前就预渲染好。你也可以使用客户端渲染额外的数据。
+
+- 服务端渲染：每次请求都会生成 HTML。为了让页面使用服务端渲染，导出 getServerSideProps。因为服务端渲染的结果性能比静态生成差，只有当绝对必须的时候才用它。
 
 ## 路由
 
@@ -299,7 +597,7 @@ app.prepare().then(() => {
     } else {
       handle(req, res, parsedUrl);
     }
-  }).listen(3000, err => {
+  }).listen(3000, (err) => {
     if (err) throw err;
     console.log("> Ready on http://localhost:3000");
   });
@@ -334,7 +632,7 @@ app.prepare().then(() => {
 
 ```js
 module.exports = {
-  useFileSystemPublicRoutes: false
+  useFileSystemPublicRoutes: false,
 };
 ```
 
@@ -544,8 +842,8 @@ module.exports = (phase, { defaultConfig }) => {
 ```js
 module.exports = {
   env: {
-    customKey: "my-value"
-  }
+    customKey: "my-value",
+  },
 };
 ```
 
@@ -581,7 +879,7 @@ return <h1>The value of customKey is: {"my-value"}</h1>;
 
 ```js
 module.exports = {
-  pageExtensions: ["mdx", "jsx", "js", "ts", "tsx"]
+  pageExtensions: ["mdx", "jsx", "js", "ts", "tsx"],
 };
 ```
 
@@ -596,7 +894,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 module.exports = {
   // Use the CDN in production and localhost for development.
-  assetPrefix: isProd ? "https://cdn.mydomain.com" : ""
+  assetPrefix: isProd ? "https://cdn.mydomain.com" : "",
 };
 ```
 
@@ -626,7 +924,7 @@ Next.js 支持各种构建目标，每个都会让你的应用改变构建和运
 
 ```js
 module.exports = {
-  target: "serverless"
+  target: "serverless",
 };
 ```
 
@@ -645,8 +943,8 @@ module.exports = {
 ```js
 module.exports = {
   devIndicators: {
-    autoPrerender: false
-  }
+    autoPrerender: false,
+  },
 };
 ```
 
@@ -662,12 +960,12 @@ module.exports = {
   serverRuntimeConfig: {
     // Will only be available on the server side
     mySecret: "secret",
-    secondSecret: process.env.SECOND_SECRET // Pass through env variables
+    secondSecret: process.env.SECOND_SECRET, // Pass through env variables
   },
   publicRuntimeConfig: {
     // Will be available on both server and client
-    staticFolder: "/static"
-  }
+    staticFolder: "/static",
+  },
 };
 ```
 
@@ -712,7 +1010,7 @@ export default MyImage;
 
 ```js
 module.exports = {
-  distDir: "build"
+  distDir: "build",
 };
 ```
 
@@ -731,7 +1029,7 @@ module.exports = {
   generateBuildId: async () => {
     // You can, for example, get the latest git commit hash here
     return "my-build-id";
-  }
+  },
 };
 ```
 
