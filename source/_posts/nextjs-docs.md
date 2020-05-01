@@ -106,19 +106,19 @@ function About() {
 export default About;
 ```
 
-### Pages 使用动态路由
+#### Pages 使用动态路由
 
 Next.js 支持页面使用动态路由。比如，如果你创建文件名叫做 pages/posts/[id].js, 然后它就可以通过 posts/1, posts/2,等等。
 
 > 学学习更多动态路由知识，查看[动态路由文档](https://nextjs.org/docs/routing/dynamic-routes)
 
-### 预渲染
+#### 预渲染
 
 默认，Next.js 对每个页面预渲染。这意味着 Next.js 会提前为每个页面生成 HTML，而不是由客户端 JavaScript 来生成。预渲染会带来更好的性能和 SEO。
 
 每个生成的 HTML 只关联那个页面需要的最少 js 代码。当页面被浏览器加载完毕，它的 js 代码运行会使得页面完全可交互。（这个过程被叫做水合/hydration）
 
-#### 两种预渲染的方式
+##### 两种预渲染的方式
 
 Next.js 有两种预渲染方式：静态生成和服务端渲染。这区别在于为页面生成 HTML 的时机。
 
@@ -131,13 +131,13 @@ Next.js 有两种预渲染方式：静态生成和服务端渲染。这区别在
 
 最后，你可以始终将客户端渲染和静态生成或者服务端渲染一起使用。这意味着页面的某些部分可以完全的由客户端代码渲染。为了进一步学习，可以查看[数据获取](https://nextjs.org/docs/basic-features/data-fetching#fetching-data-on-the-client-side)文档
 
-### 静态生成（建议）
+#### 静态生成（建议）
 
 如果页面使用静态生成，页面的 HTML 将在构建时被生成。这意味着，在生产环境下，页面 HTML 在你运行 next build 时生成。这个 HTML 将会被每个请求复用，它也可以被 CDN 缓存。
 
 在 Next.js 中，你可以带着数据或者不带数据生成页面，让我们来看看这两个情况。
 
-#### 不带数据静态生成
+##### 不带数据静态生成
 
 默认情况下，Next.js 不带数据静态生成预渲染页面。下面是案例：
 
@@ -151,14 +151,14 @@ export default About;
 
 注意这个页面不需要获取任何额外数据去预渲染。这个场景比如：Next.js 在构建时对每个 page 生成单个 HTML。
 
-#### 带数据静态生成
+##### 带数据静态生成
 
 有些页面在预渲染时获取额外数据。这里有两个情况，一种或者两种都适用。每种情况，那你可以适用 Next.js 提供的特殊功能:
 
 1. 页面内容依赖外部数据：适用 getStaticProps
 2. 页面路径依赖外部数据：适用 getStaticPaths (通常也用到 getStaticProps)
 
-##### 场景 1：页面内容依赖额外数据
+###### 场景 1：页面内容依赖额外数据
 
 例如：你博客页面可能需要从 CMS（内容管理系统）中获取博客列表。
 
@@ -207,7 +207,7 @@ export default Blog;
 
 为了学习 getStaticProps 如何工作，查看[数据获取文档](https://nextjs.org/docs/basic-features/data-fetching#getstaticprops-static-generation)
 
-##### 场景 2：页面路径依赖额外数据
+###### 场景 2：页面路径依赖额外数据
 
 Next.js 允许你通过动态路由来创建页面。比如，你可以创建 pages/posts/[id].js 来基于 id 来显示单个博客。当你访问 posts/1 是博客将获得 id:1 的参数来显示博客内容。
 
@@ -265,7 +265,7 @@ export async function getStaticProps({ params }) {
 export default Post;
 ```
 
-#### 什么时候使用静态生成？
+##### 什么时候使用静态生成？
 
 我们建议尽可能的使用静态生成，因为那你的页面只被构建一次且可以被 CDN 缓存，可以使得比每次请求都服务端渲染快很多。
 
@@ -285,7 +285,7 @@ export default Post;
 - 使用带客户端渲染的静态生成：你可以跳过页面的某些部分预渲染，然后使用客户端渲染来填充它们。
 - 使用服务端渲染：Next.js 在每次请求预渲染。它会很慢，因为页面无法被 CDN 缓存，但是预渲染页面是实时刷新的。
 
-### 服务端渲染
+#### 服务端渲染
 
 > 也叫做 SSR 或者动态渲染
 
@@ -317,13 +317,471 @@ export default Page;
 
 如你所见，getServerSideProps 和 getStaticProps 很像，但是区别的是，getServerSideProps 是每个请求都会调用而不是在构建时。
 
-### 总结
+#### 总结
 
 我们讨论了 Next.js 中的两种预渲染方式。
 
 - 静态生成（推荐）：页面在构建时生成并每次请求都可以复用。为了让页面使用静态生成，导出纯页面组件，或者导出 getStaticProps（如果需要导出 getStaticPaths）。会在用户请求之前就预渲染好。你也可以使用客户端渲染额外的数据。
 
 - 服务端渲染：每次请求都会生成 HTML。为了让页面使用服务端渲染，导出 getServerSideProps。因为服务端渲染的结果性能比静态生成差，只有当绝对必须的时候才用它。
+
+### 数据获取
+
+在 Pages 文档中，我们解释了 Next.js 有两种预渲染方式：静态生成和服务端渲染。在这个页面，我们将深度讨论每种情况的数据获取策略。我们建议你首先读一下 Pages 文档。
+
+我们将讨论 3 种你可以在预渲染时使用的 Next.js 函数：
+
+- getStaticProps(静态生成)：在构建时获取数据
+- getStaticPaths(静态生成)：指定预渲染时的根据数据的动态路由
+- getServerSideProps(服务端渲染)：在每次请求时获取数据。
+
+另外，我们将简要讨论如何在客户端获取数据。
+
+#### getStaticProps(静态生成)
+
+如果你在页面中导出 getStaticProps 异步函数，Next.js 将在构建时使用 getStaticProps 返回的数据作为 Props 渲染页面。
+
+```js
+export async function getStaticProps(context) {
+  return {
+    props: {}, // will be passed to the page component as props
+  };
+}
+```
+
+这个 Context 参数是一个包含下面属性的对象：
+
+- params 包含了当页面使用动态路由的路由参数。例如，如果页面名是 [id].js ，然后 params 将是 {id:...}。会和 getStaticPaths 一起使用
+- preview 是 true 表示页面是在预览模式下。[预览模式文档](https://nextjs.org/docs/advanced-features/preview-mode)
+- previewData 包含通过 setPreviewData 设置的预览数据。[预览模式文档](https://nextjs.org/docs/advanced-features/preview-mode)
+
+##### 简单实例
+
+下面的案例使用 getStaticProps 从 CMS 中获取博客章节列表。
+
+```jsx
+// You can use any data fetching library
+import fetch from "node-fetch";
+
+// posts will be populated at build time by getStaticProps()
+function Blog({ posts }) {
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li>{post.title}</li>
+      ))}
+    </ul>
+  );
+}
+
+// This function gets called at build time on server-side.
+// It won't be called on client-side, so you can even do
+// direct database queries. See the "Technical details" section.
+export async function getStaticProps() {
+  // Call an external API endpoint to get posts.
+  const res = await fetch("https://.../posts");
+  const posts = await res.json();
+
+  // By returning { props: posts }, the Blog component
+  // will receive `posts` as a prop at build time
+  return {
+    props: {
+      posts,
+    },
+  };
+}
+
+export default Blog;
+```
+
+##### 什么时机应该使用 getStaticProps?
+
+当遇到以下条件时应该使用 getStaticProps:
+
+- 在用户请求之前的构建阶段渲染有数据的页面是有效的
+- 数据来自无头的 CMS
+- 数据可以被公开缓存（不带用户信息）
+- 页面需要预渲染（为 SEO）并且非常快 - getStaticProps 生成 HTML 和 JSON 文件，它们可以被 CDN 缓存来提高性能
+
+##### TypeScript: 使用 GetStaticProps
+
+对于 TypeScript,你可以从 next 中使用 GetStaticProps 类型：
+
+```js
+import { GetStaticProps } from "next";
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  // ...
+};
+```
+
+##### 读文件：使用 process.cwd()
+
+在 getStaticProps 中可以从文件系统中被直接读取文件。
+
+为了做到，你需要获取文件的全路径。
+
+因为 Next.js 编译你的代码到独立的目录，你无法使用 `__dirname` 作为路径，因为它返回的不是 pages 目录。
+
+你可以使用 process.cwd()，它会给你 Next.js 被执行的目录。
+
+```jsx
+import fs from "fs";
+import path from "path";
+
+// 文章列表将在构建时被getStaticProps()填充
+function Blog({ posts }) {
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li>
+          <h3>{post.filename}</h3>
+          <p>{post.content}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// 这个函数将在服务端构建时被调用
+// 它不会被在客户端调用，所以你甚至可以直接访问数据库
+export async function getStaticProps() {
+  const postsDirectory = path.join(process.cwd(), "posts");
+  const filenames = fs.readdirSync(postsDirectory);
+
+  const posts = filenames.map((filename) => {
+    const filePath = path.join(postsDirectory, filename);
+    const fileContents = fs.readFileSync(filePath, "utf8");
+
+    // 通常你应该解析和转换内容
+    // 比如你可以在这里转换markdown成HTML
+
+    return {
+      filename,
+      content: fileContents,
+    };
+  });
+  // 返回 { props: posts }, the Blog component 将在构建时接收posts作为属性
+  return {
+    props: {
+      posts,
+    },
+  };
+}
+
+export default Blog;
+```
+
+#### 技术细节
+
+**只在构建时运行**
+因为 getStaticProps 在构建时生成静态 HTML，所以它不会接收那些仅在请求时有效的数据，比如查询参数或者 HTTP 请求头。
+
+**直接写服务端代码**
+注意 getStaticProps 只运行在服务端。它永远不会运行到客户端。它不会包含为浏览器生成的 JS 打包文件。这因为着你可以写直接访问数据库查询的代码，不会发送到浏览器上。你可以不在 getStaticProps 调用 API，你可以直接在 getStaticProps 中写下服务端代码。
+
+**静态生成 HTML 和 JSON**
+当页面在构建时使用 getStaticProps 进行预渲染，除了页面内的 HTML 文件，Next.js 生成 JSON 文件来存储 getStaticProps 的运行结果。
+
+这个 JSON 文件将使用在客户端通过`next/link`((文档)[https://nextjs.org/docs/api-reference/next/link])或者`next/router`((文档)[https://nextjs.org/docs/api-reference/next/router])导航时请求。当你导航到这个页面，它使用 getStaticProps，Next.js 获取这个 JSON 文件（构建时提前计算的），然后使用它作为页面组件的属性参数。这意味着客户端跳转时不会调用 getStaticProps，只使用导出的 JSON 文件。
+
+**仅在页面中允许**
+只能在 page 中导出 getStaticProps。不能再非 Page 文件下到导出。
+
+其中一个限制原因是 React 需要在渲染页面之前加载所有的数据
+
+同样，你必须使用`export async function getStaticProps() {}` - 如果你添加 getStaticProps 作为页面组件的属性，则无法工作。
+
+**在开发模式下每个请求运行**
+在开发模式下(`next dev`), getStaticProps 将在每次请求时调用。
+
+**预览模式**
+在某些情况下，你可能想要临时绕过静态生成，并在使用请求时渲染页面而不是使用构建时的结果。比如，你可能使用无头的 CMS 并想要在发布之前预览草稿。
+
+这种场景 Next.j 使用预览模式的功能提供支持。进步了解[预览模式文档](https://nextjs.org/docs/advanced-features/preview-mode)
+
+#### getStaticPaths (静态生成)
+
+如果页面有动态路由（(文档)[https://nextjs.org/docs/routing/dynamic-routes]）并使用了 getStaticProps，需要定义 paths 列表，才会在构建时生成 HTML。
+
+如果你在动态路由的 Page 中导出 getStaticPaths 异步函数，Next.js 将静态预渲染所有被 getStaticPaths 指定的路径。
+
+```js
+export async function getStaticPaths() {
+  return {
+    paths: [
+      { params: { ... } } // See the "paths" section below
+    ],
+    fallback: true or false // See the "fallback" section below
+  };
+}
+```
+
+**paths 键必须**
+这个 paths 键决定哪些路径会被预渲染。例如，假设你有一个命名为 pages/posts/[id].js 的动态路由页面。如果你在这个页面中导出 getStaticProps 并返回以下的路径：
+
+```js
+return {
+  paths: [
+    { params: { id: '1' } },
+    { params: { id: '2' } }
+  ],
+  fallback: ...
+}
+```
+
+然后 Next.js 将在构建时使用`pages/posts/[id].js`的页面组件静态生成`posts/1`和`posts/2`
+
+注意每个 params 的值都必须与页面名称中使用的参数匹配：
+
+- 如果页面名称是`pages/posts/[postId]/[commentId]`,params 应该包含 postId 和 commentId。
+- 如果页面名使用捕获所有的路由，比如`pages/[...slug]`，然后 params 应该包含 slug 是个数组。比如，如果数组是`['foo','bar']`，然后 Next.js 将静态生成页面在`/foo/bar`
+
+**fallback 键必须**
+getStaticPaths 返回的对象一定要包含 bool 类型的 fallback 键。
+
+`fallback:false`
+
+如果 fallback 是 false，任何不在 getStaticPaths 的路径的结果将是 404 页面。如果你预渲染的路径数量很小的话可以之前在构建时全部生成。当新页面不经常添加时非常有用。如果你要向数据中添加很多数据项并需要渲染它们，你需要再次构建。
+
+这里有个实例，每个预渲染的博客文章的页面都是`pages/posts/[id].js`。博客文章的列表在 getStaticPaths 中通过 CMS 获得。然后，每个页面都适用 getStaticProps 从 CMS 中获取文章数据。
+
+```js
+// pages/posts/[id].js
+import fetch from "node-fetch";
+
+function Post({ post }) {
+  // Render post...
+}
+
+// This function gets called at build time
+export async function getStaticPaths() {
+  // Call an external API endpoint to get posts
+  const res = await fetch("https://.../posts");
+  const posts = await res.json();
+
+  // Get the paths we want to pre-render based on posts
+  const paths = posts.map((post) => ({
+    params: { id: post.id },
+  }));
+
+  // We'll pre-render only these paths at build time.
+  // { fallback: false } means other routes should 404.
+  return { paths, fallback: false };
+}
+
+// This also gets called at build time
+export async function getStaticProps({ params }) {
+  // params contains the post `id`.
+  // If the route is like /posts/1, then params.id is 1
+  const res = await fetch(`https://.../posts/${params.id}`);
+  const post = await res.json();
+
+  // Pass post data to the page via props
+  return { props: { post } };
+}
+
+export default Post;
+```
+
+`fallback:true`
+如果 fallback 是 true，getStaticProps 的行为将会发生变化：
+
+- getStaticPaths 返回的路径将在构建时被渲染成 HTML
+- 没有在构建时生成的路径将不会返回 404 页面。相反，Next.js 将在页面被第一次请求时提供后备版本。在下面看[后备页面](https://nextjs.org/docs/basic-features/data-fetching#fallback-pages)。
+- 在后台，Next.js 将静态生成请求路径的 HTML 和 JSON。它们会运行 getStaticProps。
+- 当这些完成，浏览器会接收到已生成的路径的 JSON 文件。然后将使用它作为参数自动渲染页面。从用户的视角看，页面从备份页面切换到了完整页面。
+- 同时，Next.js 会将这个路径添加到预渲染页面列表。后续请求到相同路径将返回已生成的页面，就像其他在构建时预渲染页面一样。
+
+**备份页面**
+页面的备份版本：
+
+- 页面的属性将是空的
+- 使用 router,你可以检测如果 fallback 已经被渲染，router.isFallback 将是 true
+
+下面是使用 isFallback 的案例：
+
+```jsx
+// pages/posts/[id].js
+import { useRouter } from "next/router";
+import fetch from "node-fetch";
+
+function Post({ post }) {
+  const router = useRouter();
+
+  // 如果页面还没有被生成，它将显示
+  // 初始化 until getStaticProps() 结束运行
+  if (router.isFallback) {
+    return <div>Loading...</div>;
+  }
+
+  // Render post...
+}
+
+// 这个函数将在构建时运行
+export async function getStaticPaths() {
+  return {
+    // 只有 `/posts/1` and `/posts/2` 在构建时被运行
+    paths: [{ params: { id: "1" } }, { params: { id: "2" } }],
+    // 启用静态生成其他页面
+    // 例如: `/posts/3`
+    fallback: true,
+  };
+}
+
+// 在构建时被执行
+export async function getStaticProps({ params }) {
+  // 参数包含文章 `id`.
+  // 如果路由是 /posts/1, 这个 params.id 将是 1
+  const res = await fetch(`https://.../posts/${params.id}`);
+  const post = await res.json();
+
+  // 传递文章数据作为页面属性
+  return { props: { post } };
+}
+
+export default Post;
+```
+
+**什么时候`fallback:true`有用？**
+`fallback:true`当你的应用有非常大数量的静态页面时有用（思考：大型电商网站）。你想要预渲染所有产品页面，但是你的构建将花费很长。
+
+相反，你应该静态生成少量集合的页面，剩下的页面使用`fallback:true`。当有人请求没有生成过的页面时，用户将会看到加载进度条。很快，getStaticProps 完成页面将使用请求的数据渲染。那么从现在开始，所有请求相同路径的人将获得静态预渲染页面。
+
+它保证在保障构建速度和静态生成的优势同时，用户也一直有很快的体验。
+
+**什么时候应该使用 getStaticPaths?**
+如果你使用动态路由来静态预渲染页面，那你应该使用 getStaticPaths
+
+**TypeScript: 使用 GetStaticPaths**
+在 TypeScript 中，你可以从 next 中使用 GetStaticPaths:
+
+```js
+import { GetStaticPaths } from "next";
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  // ...
+};
+```
+
+##### 技术细节
+
+**和 getStaticProps 一起使用**
+当你在动态路由参数的页面上使用 getStaticProps 时，你肯定要使用 getStaticProps
+
+你无法让 getStaticPaths 和 getServerSideProps 一起使用。
+
+**只在服务端构建时运行**
+getStaticPaths 只在服务端构建时运行
+
+**只运行在 Page 中**
+getStaticPaths 只能被 page 导出。你不能在非 Page 的文件中导出它
+
+同样，你必须使用`export async function getStaticPaths() {}` -如果你添加 getStaticPaths 到页面组件上不生效
+
+**在开发模式下每次请求运行**
+在开发模式下（`next dev`）, getStaticPaths 将在每次请求时调用。
+
+#### getServerSideProps(服务端渲染)
+
+如果你在页面导出 getServerSideProps 异步函数，Next.js 将在每次请求时通过调用 getServerSideProps 来预渲染页面。
+
+```js
+export async function getServerSideProps(context) {
+  return {
+    props: {}, // 将作为页面组件的属性
+  };
+}
+```
+
+context 参数是包含下列 key 的对象：
+
+- params: 如果页面使用动态路由，params 包含路由的参数。如果页面名字是`[id].js`，那么 params 将是这样的`{id:...}`
+- req: Http IncomingMessage 对象.
+- res: Http 响应对象
+- query: 查询参数
+- preview: true 如果页面是预览模式。否则就是 false
+- previewData: 通过 setPreviewData 来设置预览数据
+
+##### 简单案例
+
+这里是使用 getSeverSideProps 在每次请求时获取数据预渲染的案例。
+
+```jsx
+function Page({ data }) {
+  // Render data...
+}
+
+// 每次请求获取
+export async function getServerSideProps() {
+  // 通过api获取数据
+  const res = await fetch(`https://.../data`);
+  const data = await res.json();
+
+  // 传递data作为页面属性
+  return { props: { data } };
+}
+
+export default Page;
+```
+
+##### 什么时候应该使用 getServerSideProps?
+
+只有当你预渲染的页面需要实时获取数据的时候才应该使用 getServerSideProps。相较于 getStaticProps 第一个字节到达(TTFB)的时间比较慢，因为服务端一定每次请求都要计算结果，并且这个结果没有额外的配置无法被 CDN 缓存。
+
+如果你不需要预渲染数据，你可以考虑在客户端获取数据
+
+##### TypeScript:使用 GetServerSideProps
+
+对于 TypeScript， 你从 next 中使用 GetServerSideProps 类型
+
+```js
+import { GetServerSideProps } from "next";
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  // ...
+};
+```
+
+#### 技术细节
+
+**只在服务端运行**
+getServerSideProps 只能运行服务端并且不会运行在浏览器上。如果页面使用 getServerSideProps，需要注意：
+
+- 当你直接请求这个页面，getServerSideProps 会在每次请求时运行，并且页面每次预渲染返回 props。
+- 当你在客户端通过`next/link`或者`next/router`来跳转时，Next.js 执行 getServerSideProps 发送 Api 请求给服务器。它将会返回 getServerSideProps 运行的结果，并且这个 JSON 将会被用来渲染页面。所有这些工作将被 Next.js 自动处理，所以除了 getServerSideProps 你不需要其他额外的定义。
+
+**在能在 page 中导出**
+getServerSideProps 只能被 page 导出。你无法在非 page 文件中导出。
+
+同样，你必须使用`export async function getServerSideProps() {}` - 如果你将它作为页面组件的属性这无法工作
+
+#### 在客户端请求数据
+
+如果你页面需要频繁请求数据，你不需要预渲染数据，你可以只在客户端请求数据。在客户端请求数据的案例，如何工作：
+
+- 首先，不带数据立刻显示页面。页面部分内容可以使用静态生成预渲染。你可以在缺失数据的请求下显示加载状态。
+- 然后，在客户端请求数据，并在准备好时显示。
+
+这种方式对于用户管理页面非常好，比如。因为管理面板是私有的，用户特有页面，不需要 SEO 则页面不需要预渲染。数据是频繁更新的，要求每次数据都实时请求。
+
+#### SWR
+
+Next.js 背后的团队创建[SWR](https://swr.now.sh/)来获取数据的 React Hook。我们强烈建议如果在客户端请求使用它。它会处理缓存，重新验证，焦点跟踪，间隔重新获取等等。你可以这么使用：
+
+```js
+import useSWR from "swr";
+
+function Profile() {
+  const { data, error } = useSWR("/api/user", fetch);
+
+  if (error) return <div>failed to load</div>;
+  if (!data) return <div>loading...</div>;
+  return <div>hello {data.name}!</div>;
+}
+```
+
+[进一步查看 SWR 文档](https://swr.now.sh/)
 
 ## 路由
 
