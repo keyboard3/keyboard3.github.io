@@ -969,6 +969,105 @@ export default MyImage;
 > 确保没有静态文件与 pages/ 文件夹下同名的文件，它会导致错误
 > 读 [http://err.sh/next.js/conflicting-public-file-page](http://err.sh/next.js/conflicting-public-file-page)
 
+### TypeScript
+
+Next.js 提供了一个集成的 TypeScript 开箱即用的体验，类似于 IDE
+
+开始，在你的项目根目录下创建一个空的 tsconfig.json 文件
+
+```
+touch tsconfig.json
+```
+
+Next.js 将使用默认值自动配置这个文件，同样支持使用自定义[编译参数](https://www.typescriptlang.org/docs/handbook/compiler-options.html)配置你的 tsconfig.json
+
+> Next.js 使用 Babel 来处理 TypeScript，有一些[注意事项](https://babeljs.io/docs/en/babel-plugin-transform-typescript#caveats), 以及一些[编译参数有区别](https://babeljs.io/docs/en/babel-plugin-transform-typescript#typescript-compiler-options)
+
+然后，运行 next（通常 npm run dev ），然后 Next.js 将指导你安装必须包完成配置。
+
+```
+npm run dev
+# 你讲看到下面指令:
+#
+# 请安装 typescript, @types/react, and @types/node 通过运行:
+#
+#         yarn add --dev typescript @types/react @types/node
+#
+# ...
+```
+
+你先可以准备开始把.js 文件转化成.tsx，并利用 TypeScript 的优势
+
+> 命名为 next-env.d.ts 文件将被项目的根目录创建。这个文件保证 Next.js 类型被 TypeScript 编译器选中。你不能删除它，然而你可以修改它（但你不需要这么做）
+
+> Next.js 严格模式默认关闭。当你感觉熟悉 TypeScript，建议你在 tsconfig.json 中打开它
+
+默认，Next.js 会上报你开发期间积极处理页面的 TypeScript 错误。不积极页面的 TypeScript 错误不会阻止开发进程。
+
+如果你想要静默这些错误上报，参考[忽略 TypeScript 错误](https://nextjs.org/docs/api-reference/next.config.js/ignoring-typescript-errors)的文档
+
+#### 静态生成和服务端渲染
+
+对于 getStaticProps, getStaticPaths, and getServerSideProps。你可以分别使用 GetStaticProps, GetStaticPaths, and GetServerSideProps 类型
+
+```js
+import { GetStaticProps, GetStaticPaths, GetServerSideProps } from "next";
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  // ...
+};
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  // ...
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  // ...
+};
+```
+
+> 如果你使用 getInitialProps，你可以[参考这个页面](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#typescript)
+
+#### API 路由
+
+下面是如何为 API 路由使用内置的类型的案例
+
+```js
+import { NextApiRequest, NextApiResponse } from "next";
+
+export default (req: NextApiRequest, res: NextApiResponse) => {
+  res.status(200).json({ name: "John Doe" });
+};
+```
+
+你也可以指定响应数据
+
+```js
+import { NextApiRequest, NextApiResponse } from "next";
+
+type Data = {
+  name: string,
+};
+
+export default (req: NextApiRequest, res: NextApiResponse<Data>) => {
+  res.status(200).json({ name: "John Doe" });
+};
+```
+
+#### 自定义 App
+
+如果你有自定义的 App，你可以使用内置的 AppProps 类型，并将文件名改为 ./pages/\_app.tsx：
+
+```
+import { AppProps } from 'next/app'
+
+function MyApp({ Component, pageProps }: AppProps) {
+  return <Component {...pageProps} />
+}
+
+export default MyApp
+```
+
 ## 路由
 
 ## API 路由
