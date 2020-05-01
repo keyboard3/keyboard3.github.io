@@ -783,6 +783,192 @@ function Profile() {
 
 [进一步查看 SWR 文档](https://swr.now.sh/)
 
+### 内置 CSS 支持
+
+Next.js 允许你在 JavaScript 文件中导入 CSS 文件。这是可能的，因为 Next.js 扩展 import 概念到 JS 之外。
+
+#### 添加全局的样式表
+
+为了给你的应用添加样式表，导入 CSS 文件到`pages/_app.js`
+
+例如，考虑将下面的样式命名为 styles.css
+
+```css
+body {
+  font-family: "SF Pro Text", "SF Pro Icons", "Helvetica Neue", "Helvetica",
+    "Arial", sans-serif;
+  padding: 20px 20px 60px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+```
+
+创建一个`pages/_app.js`文件，然后导入 styles.css 文件
+
+```js
+import "../styles.css";
+
+//  在这个 `pages/_app.js` 文件中，这个默认的导出是必须的.
+export default function MyApp({ Component, pageProps }) {
+  return <Component {...pageProps} />;
+}
+```
+
+这些样式将会应用到你应用的所有页面和组件上。由于这个全局特性，需要避免冲突，你应该只将它们导入到`pages/_app.js`中
+
+在开发中，用这种方式表示样式表允许你边修改变应用样式-意味着你可以保持应用状态。
+
+在生产环境中，所有 CSS 文件都会被自动级联到一个压缩后的.css 文件中。
+
+#### 添加组件级 CSS
+
+Next.js 支持[CSS 模块](https://github.com/css-modules/css-modules)，使用`[name].module.css`文件命名约定。
+
+CSS 模块通过自动创建独一无二的 class 名字来实现本地域的 CSS。它允许你在不同的文件中使用相同的 CSS 类，而不用担心碰撞。
+
+这个行为使得 CSS 模块拥有了包含组件级 CSS 的理想方法。CSS 模块文件可以被应用中任何地方导入。
+
+比如，思考在`components/`文件下创建一个可重用的 Button 组件。
+
+首先，创建`components/Button.module.css`文件填充以下内容：
+
+```css
+/*
+你不需要担心 .error {} 碰撞其他类 `.css` 或者
+`.module.css` 文件中的error
+*/
+.error {
+  color: white;
+  background-color: red;
+}
+```
+
+然后，创建`components/Button.js`，导入和使用以上 CSS 文件：
+
+```js
+import styles from "./Button.module.css";
+
+export function Button() {
+  return (
+    <button
+      type="button"
+      // 注意error类可以被导入的styles对象访问
+      className={styles.error}
+    >
+      Destroy
+    </button>
+  );
+}
+```
+
+CSS 模块是一个可选的特性，并且只在文件扩展名为 .module.css 有效。常规的`<Link>`样式表和全局的 CSS 文件仍然被支持。
+
+在生产环境下，所有 CSS 模块文件都将被自动级联到许多压缩、代码分割的 .css 文件中。这些 .css 文件表示应用热执行路径，保证加载应用绘制所需的 CSS 最少。
+
+#### CSS-in-JS
+
+**例子**
+
+- [Styled JSx](https://github.com/zeit/next.js/tree/canary/examples/basic-css)
+- [Styled Components](https://github.com/zeit/next.js/tree/canary/examples/with-styled-components)
+- [Styletron](https://github.com/zeit/next.js/tree/canary/examples/with-styletron)
+- [Glamor](https://github.com/zeit/next.js/tree/canary/examples/with-glamor)
+- [Cxs](https://github.com/zeit/next.js/tree/canary/examples/with-cxs)
+- [Aphrodite](https://github.com/zeit/next.js/tree/canary/examples/with-aphrodite)
+- [Fela](https://github.com/zeit/next.js/tree/canary/examples/with-fela)
+
+可以使用现有的任何一种 JS 中使用 CSS 的方案。最简单的使用内联。
+
+```js
+function HiThere() {
+  return <p style={{ color: "red" }}>hi there</p>;
+}
+
+export default HiThere;
+```
+
+我们打包[styled-jsx](https://github.com/zeit/styled-jsx)来支持独立作用域的 CSS。目的是用来支持类似于 Web Components 的影子 CSS，不幸的是它[不支持服务端渲染并且仅支持 JS](https://github.com/w3c/webcomponents/issues/71)
+
+看上面的案例中其他流行的 CSS-in-JS 方法（比如 Styled Components）。
+
+使用 styled-jsx 的组件案例：
+
+```jsx
+function HelloWorld() {
+  return (
+    <div>
+      Hello world
+      <p>scoped!</p>
+      <style jsx>{`
+        p {
+          color: blue;
+        }
+        div {
+          background: red;
+        }
+        @media (max-width: 600px) {
+          div {
+            background: blue;
+          }
+        }
+      `}</style>
+      <style global jsx>{`
+        body {
+          background: black;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export default HelloWorld;
+```
+
+请参考 [styled-jsx 文档](https://github.com/zeit/styled-jsx)看更多的案例
+
+#### Sass 支持
+
+Next.js 允许使用 .scss 和 sass 扩展来导入 Sass。你可以通过 CSS 模块 .module.scss 或者 .module.sass 扩展导入组件级的 Sass。
+
+在你使用 Next.js 内置的 Sass 支持之前，保证安装了 sass
+
+```
+npm install sass
+```
+
+Sass 的支持和上述内置的 CSS 支持有相同的优势和限制
+
+#### Less 和 Stylus 支持
+
+为了支持导入 .less 或者 .styl 文件，你需要使用下面的插件
+
+- [@zeit/next-less](https://github.com/zeit/next-plugins/tree/master/packages/next-less)
+- [@zeit/next-stylus](https://github.com/zeit/next-plugins/tree/master/packages/next-stylus)
+
+#### 关联
+
+- [自定义 PostCSS 配置](https://nextjs.org/docs/advanced-features/customizing-postcss-config)
+  通过自定义 Next.js 来扩展 PostCSS 配置和插件
+
+### 静态文件服务
+
+Next.js 可以服务静态文件，比如图片，在根目录下的 public 文件夹下。在 public 下的文件可以被你代码直接通过 '/'引用。
+
+```jsx
+function MyImage() {
+  return <img src="/my-image.png" alt="my image" />;
+}
+
+export default MyImage;
+```
+
+这个文件夹同样对于 robots.txt，Google 网站验证，以及其他静态文件（包括.html）都有用。
+
+> 不要重命名 public 文件夹，这个文件名不能被修改并且只能被用来放静态资源
+
+> 确保没有静态文件与 pages/ 文件夹下同名的文件，它会导致错误
+> 读 [http://err.sh/next.js/conflicting-public-file-page](http://err.sh/next.js/conflicting-public-file-page)
+
 ## 路由
 
 ## API 路由
