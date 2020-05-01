@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-03-30 10:47:26
 password:
 summary:
-tags: [nextjs, 翻译, 进行中]
+tags: [next.js, docs, 翻译, 进行中]
 categories:
 ---
 
@@ -472,7 +472,7 @@ export async function getStaticProps() {
 export default Blog;
 ```
 
-#### 技术细节
+##### 技术细节
 
 **只在构建时运行**
 因为 getStaticProps 在构建时生成静态 HTML，所以它不会接收那些仅在请求时有效的数据，比如查询参数或者 HTTP 请求头。
@@ -743,7 +743,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 ```
 
-#### 技术细节
+##### 技术细节
 
 **只在服务端运行**
 getServerSideProps 只能运行服务端并且不会运行在浏览器上。如果页面使用 getServerSideProps，需要注意：
@@ -1069,6 +1069,276 @@ export default MyApp
 ```
 
 ## 路由
+
+Next.js 具有页面概念的文件系统路由。
+
+当文件被添加到 pages 目录下，它自动成为了有效的路由
+
+pages 目录下的文件被用来定义成常见的模式
+
+**索引路由**
+router 将会自动的路由到目录下的 index 文件
+
+- `pages/index.js` → /
+- `pages/blog/index.js` → /blog
+
+**嵌套路由**
+路由支持嵌套文件。如果你创建一个嵌套目录结构的文件夹，将自动以相同的方式路由
+
+- `pages/blog/first-post.js` → `/blog/first-post`
+- `pages/dashboard/settings/username.js` → /`dashboard/settings/username`
+
+**动态路由段**
+为了匹配动态分段你可以使用括号语法。它允许你匹配命名参数
+
+- `pages/blog/[slug].js` → `/blog/:slug` (`/blog/hello-world`)
+- `pages/[username]/settings.js` → `/:username/settings` (`/foo/settings`)
+- `pages/post/[...all].js` → `/post/\*` (`/post/2020/id/title`)
+
+#### 不同页面之间的链接
+
+Next.js 的 router 允许你在页面间进行客户端路由转换，类似于单页应用。
+
+Link React 组件提供了客户端路由转换
+
+```jsx
+import Link from "next/link";
+
+function Home() {
+  return (
+    <ul>
+      <li>
+        <Link href="/">
+          <a>Home</a>
+        </Link>
+      </li>
+      <li>
+        <Link href="/about">
+          <a>About Us</a>
+        </Link>
+      </li>
+    </ul>
+  );
+}
+
+export default Home;
+```
+
+当链接到动态路由分段，你必须要提供 href 和 as 属性保证 router 知道那个 js 文件可以加载
+
+- href - pages 目录下页面的名字。例如 `/blog/[slug]`
+- as - 浏览器显示的 URL。例如 `/blog/hello-world`
+
+```jsx
+import Link from "next/link";
+
+function Home() {
+  return (
+    <ul>
+      <li>
+        <Link href="/blog/[slug]" as="/blog/hello-world">
+          <a>To Hello World Blog post</a>
+        </Link>
+      </li>
+    </ul>
+  );
+}
+
+export default Home;
+```
+
+这个 as 属性也可以是动态生成的。例如，显示章节列表，需要传递给页面作为属性
+
+```jsx
+function Home({ posts }) {
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>
+          <Link href="/blog/[slug]" as={`/blog/${post.slug}`}>
+            <a>{post.title}</a>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+#### 注入 router
+
+为了在 React 组件中访问 router 对象，你可以使用 useRouter 或者 withRouter
+
+通常我们建议使用 useRouter
+
+#### 继续学习
+
+router 被分为两个部分
+
+- [next/link](https://nextjs.org/docs/api-reference/next/link)
+  处理客户端导航
+- [next/router](https://nextjs.org/docs/api-reference/next/router)
+  在页面中利用 router 的 API
+
+### 动态路由
+
+通过预定义路径来定义路由对于复杂应用不够。在 Next.js 中，你可以添加中括号给页面([param])来创建动态路由（a.k.a url slug,纯 urls，或者其他）
+
+考虑下面的页面`pages/post/[pid].js`：
+
+```
+import { useRouter } from 'next/router'
+
+const Post = () => {
+  const router = useRouter()
+  const { pid } = router.query
+
+  return <p>Post: {pid}</p>
+}
+
+export default Post
+```
+
+任何类似于`/post/1`, `/post/abc`,等。都将被`pages/post/[pid].js`匹配。匹配路径的参数将作为 query 的参数发送给页面，并且会和其他查询参数一起合并。
+
+例如，路由`/post/abc`将有下面的 query 对象
+
+```json
+{ "pid": "abc" }
+```
+
+同样，路由`/post/abc?foo=bar`将有下面的 query 对象：
+
+```json
+{ "foo": "bar", "pid": "abc" }
+```
+
+然而，路由参数将会重写同名的查询参数。例如，路由`/post/abc?pid=123`将有下面的 query 对象：
+
+```json
+{ "pid": "abc" }
+```
+
+多个动态路由分段工作类似。页面`pages/post/[pid]/[comment].js`将匹配`/post/abc/a-comment`路由，将有下面的 query 对象：
+
+```json
+{ "pid": "abc", "comment": "a-comment" }
+```
+
+客户端导航到一个动态路由，可以通过`next/link`处理
+
+#### 捕获所有路由
+
+动态路由可以通过添加三个点(...)在[]中来扩展捕获所有路径。例如
+
+- pages/post/[...slug].js 匹配 /post/a, 也包括 /post/a/b, /post/a/b/c 等等。
+
+> 注意：你可以使用非 slug 名字，比如[...param]
+
+匹配的参数将作为查询参数发送给页面(案例中是 slug)，并且它一直是一个数组，所以，路径`/post/a`将有下面的 query 对象：
+
+```json
+{ "slug": ["a"] }
+```
+
+`/post/a/b`和其他匹配的路径，参数是这样的数组：
+
+```json
+{ "slug": ["a", "b"] }
+```
+
+> 一个捕获所有路由的好案例是 Next.js docs，页面`pages/docs/[...slug].js`捕获所有你看到的 docs
+
+#### 注意事项
+
+- 预定义路由优先于动态路由，动态路由优选于捕获所有路由。案例：
+  - `pages/post/create.js` - 将匹配 `/post/create`
+  - `pages/post/[pid].js` - 将匹配 `/post/1`, `/post/abc`, etc. 不包括 `/post/create`
+  - `pages/post/[...slug].js` - 将匹配 `/post/1/2`, `/post/a/b/c`, etc. 不包括 `/post/create`, `/post/abc`
+- 通过自动静态优化的页面将水合，且不带路由参数。query 将是一个空对象
+
+水合之后，Next.js 将触发应用更新，并在 query 对象中提供路由参数。
+
+### 势在必行
+
+`next/link`应该尽可能的覆盖你路由的需求，但是你可能不需要在客户端跳转时使用它，查看[Router API 文档](https://nextjs.org/docs/api-reference/next/router#router-api)
+
+下面的案例显示了 Router API 的基础用法：
+
+```jsx
+import Router from "next/router";
+
+function ReadMore() {
+  return (
+    <div>
+      Click <span onClick={() => Router.push("/about")}>here</span> to read more
+    </div>
+  );
+}
+
+export default ReadMore;
+```
+
+### 浅层路由
+
+浅层路由允许你改变 URL 而不用再次运行数据获取方法，这些方法包括 getServerSideProps, getStaticProps, and getInitialProps.
+
+你将通过 router 对象来接收到更新后的 pathname 和 query 对象（[userRouter](https://nextjs.org/docs/api-reference/next/router#userouter)或者[withRouter](https://nextjs.org/docs/api-reference/next/router#withrouter)）,不丢失状态
+
+为了启用浅层路由，设置 shallow 参数 true。下面案例：
+
+```js
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+
+// Current URL is '/'
+function Page() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // 总是在第一次渲染之后执行跳转
+    router.push("/?counter=10", undefined, { shallow: true });
+  }, []);
+
+  useEffect(() => {
+    // 计数器发生变化
+  }, [router.query.counter]);
+}
+
+export default Page;
+```
+
+如果你不需要添加 router 对象到页面，那你也可以直接使用[Router API](https://nextjs.org/docs/api-reference/next/router#router-api), 例如：
+
+```js
+import Router from "next/router";
+// Inside your page
+Router.push("/?counter=10", undefined, { shallow: true });
+```
+
+URL 将更新为`/?counter=10`。并且页面不会替换，只是 route 的状态发生变化
+
+你也可以通过 componentDidUpdate 来观察 URL 变化：
+
+```
+componentDidUpdate(prevProps) {
+  const { pathname, query } = this.props.router
+  // 验证属性，避免无限循环
+  if (query.counter !== prevProps.router.query.counter) {
+    // 基于新的查询对象获取数据
+  }
+}
+```
+
+#### 注意事项
+
+浅层路由只在相同页面 URL 变更时有效。例如，让我们假设另外一个页面叫做`pages/about.js`，你可以运行
+
+```js
+Router.push("/?counter=10", "/about?counter=10", { shallow: true });
+```
+
+即使我们要求时浅层路由，因为它是个新页面，会卸载当前页，等数据加载完创建新的
 
 ## API 路由
 
