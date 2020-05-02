@@ -1943,6 +1943,48 @@ export default Home;
 
 ### 静态页面导出
 
+next export 允许你讲你的应用导出成静态 HTML，它可以独立允许，无需 Node.js 服务。
+
+这个导出的应用支持几乎 Next.js 的所有特性，包括动态路由，预获取，预渲染和动态导入。
+
+next export 的工作方式是将所有页面预渲染成 HTML；它基于 exportPathMap 的映射，exportPathMap 提供需要渲染成 HTML 的预定义路径。
+
+> 如果你的所有页面都没有 getInitialProps 你可能根本不需要 next export；next build 借助自动静态化已经足够。
+
+#### 如何使用
+
+使用 Next.js 开发应用，然后运行：
+
+```
+next build && next export
+```
+
+至此，你可能想要更新 package.json 的脚本：
+
+```js
+"scripts": {
+  "build": "next build && next export"
+}
+```
+
+然后只需要运行一次：
+
+```
+npm run build
+```
+
+然后你要的应用静态版本在 out 目录下
+
+默认 next export 不需要任何配置。它会生成一个默认的 exportPathMap, exportPathMap 包含 pages 目录下的所有页面路由。
+
+> 为了学习更多关于 exportPathMap ，关注[exportPathMap API 文档](https://nextjs.org/docs/api-reference/next.config.js/exportPathMap)
+
+#### 注意事项
+
+- 使用 next export,我们可以构建应用的 HTML 版本。在导出阶段我们将运行页面的 getInitialProps。context 对象的 req 和 res 字段在导出阶段将是空对象，因为没有服务器在运行。
+- 在静态导出的时候你无法动态渲染 HTML，因为我们预先构建了 HTML 文件。当你不使用 next export 时，你的应用可以是静态生成和服务端渲染的混合体。你可以学习一下[pages 一节](https://nextjs.org/docs/basic-features/pages)
+- API 路由不支持这个方法，因为它们不渲染 HTML。
+
 ### AMP 支持
 
 ### 自定义 Babel 配置
