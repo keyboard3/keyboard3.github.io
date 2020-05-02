@@ -1338,7 +1338,7 @@ componentDidUpdate(prevProps) {
 Router.push("/?counter=10", "/about?counter=10", { shallow: true });
 ```
 
-即使我们要求时浅层路由，因为它是个新页面，会卸载当前页，等数据加载完创建新的
+即使我们要求是浅层路由，因为它是个新页面，会卸载当前页，等数据加载完创建新的
 
 ## API 路由
 
@@ -1531,6 +1531,76 @@ export default (req, res) => {
 - `res.send(body)` - 发送 HTTP 响应。`body`可以是`string`、`object`或者是`Buffer`
 
 ## 部署
+
+### Vercel (推荐)
+
+部署 Next.js 到生产环境最简单的方式是使用 Next.js 创建提供的[Vercel 平台](https://vercel.com/)。Vercel 是一个多合一平台，支持全局静态 CDN，JAMstack 部署和无服务功能。
+
+### 开始
+
+如果你尚未这么做，你可以将 Next.js 应用推到你自己的 GitHub,GitLab,或者 BitBucket 这些 git provider 上。你的仓库可以是私有的或者公共的。
+
+然后，跟随着下面的这些步骤
+
+- 注册 Vercel (无需信用卡)
+- 注册之后，你讲到达[导入项目](https://vercel.com/import)页面，在"From Git Repository"下，选择你使用的 Git provider 去配置和集成。(使用说明:[GitHub](https://vercel.com/docs/v2/git-integrations/zeit-now-for-github) / [GitLab](https://vercel.com/docs/v2/git-integrations/zeit-now-for-gitlab) / [BitBucket](https://vercel.com/docs/v2/git-integrations/zeit-now-for-bitbucket)).
+- 一旦配置好，点击“Import Project From …”并导入你的 Next.js 应用。它会为你检测你的应用使用 Next.js 并设置构建配置。不需要改变任何东西 - 任何事情都会正常工作
+- 导入完成之后，它将部署你的 Next.js 应用并提供给你部署 URL。点击"Visit"去在生产环境下看你的应用
+
+恭喜！你已经成功部署 Next.js 应用！如果你有任何疑问，看一下[Vercel documentation](https://vercel.com/docs)
+
+> 如果你使用自定义服务，我们强烈建议你从其迁移走（例如，使用[动态路由](https://nextjs.org/docs/routing/dynamic-routes)）。如果无法迁移，请考虑其他[托管选项](https://nextjs.org/docs/deployment#other-hosting-options)。
+
+### DPS: Develop, Preview, Ship
+
+让我们谈谈我们建议使用的工作流程。Vercel 支持 DPS 工作流：开发，预览，发货：
+
+- 开发：在 Next.js 中写下代码。保证开发服务器运行并利用热代码重新加载功能。
+- 预览：每次你将代码变更推到 GitHub / GitLab / BitBucket 的分支，Vercel 自动创建新的部署以及唯一的 URL。当你在 Github 打开一个 pull request 时，可以看到它。或者在 Vercel 你项目目录下的“预览部署”下面。[进一步学习](https://vercel.com/features/deployment-previews)
+- 发货：当你准备发货，合并请求到你默认分支（master）。Vercel 将自动创建一个生产部署。
+
+通过 DPS 工作流，除了代码审查之外，你可以进行部署预览。每次部署都会创建一个唯一 URL，可以被共享和用于集成测试。
+
+### Next.js 优化
+
+Vercel 由 Next.js 创建者创建，对 Next.js 一流支持。
+例如，[混合页面](https://nextjs.org/docs/basic-features/pages)开箱即用的都支持
+
+- 每个页面都可以使用静态生成和服务端渲染
+- 使用静态生成和资源（JS，CSS，图片，字体等等）的页面将自动从[Vercel Smart CDN](https://vercel.com/smart-cdn)提供服务，速度非常快。
+- 使用服务端渲染和 API 路由的页面都会自动成为无服务功能。允许页面渲染和 API 请求无限扩展。
+
+### 自定义域名，环境变量，自动 HTTPS，等等
+
+- **自定义域名：** 在 Vercel 部署过，你可以给你的 Next.js 应用分配一个自定义域名。看下[我们的文档](https://vercel.com/docs/v2/custom-domains)
+- **环境变量：** 你可以在 Vercel 设置环境变量。看下[我们的文档]。然后你可以在 Next.js 应用中[使用这些环境变量](https://nextjs.org/docs/api-reference/next.config.js/environment-variables)
+- **自动 HTTPS：** HTTPS 默认启动（包括自定义域名）并且不要求其他配置。我们自动刷新 SSL 证书
+- **更多：** [读我们文档](https://vercel.com/docs)学习更多 Vercel 平台
+
+### 其他托管选项
+
+#### Node.js 服务
+
+Next.js 可以被部署到任何支持 Node.js 的托管服务器上。如果你使用自定义服务应该采用这种方法。
+保证你 package.json 有 build 和 start 脚本：
+
+```js
+{
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+next build 构建的生产应用丢到.next 文件夹下。构建之后，next start 启动 Node 服务支持[混合页面](https://nextjs.org/docs/basic-features/pages)，服务静态生成和服务端渲染页面。
+
+#### 静态 HTML 导出
+
+如果你喜欢为你的 Next.js 应用导出静态 HTML，跟随着[我们文档](https://nextjs.org/docs/advanced-features/static-html-export)的指示。默认，next export 将生成 out 文件夹，可以被放到任何静态托管服务或者 CDN。
+
+> 我们强力建议使用 Vercel，即使如果你的 Next.js 应用是全静态的。Vercel 优化过的使得静态 Next.js 应用更快。next export 在 Vercel 部署 0 配置。
 
 ## 高级特性
 
