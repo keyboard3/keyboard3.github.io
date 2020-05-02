@@ -1793,9 +1793,121 @@ setPreviewData(data, {
 
 ### 动态导入
 
+Next.js 支持 JavaScript 的 ES2020 动态导入。用它你可以动态导入 JavaScript 模块（包括 React 组件）并使用它们。它们也可以在 SSR 中使用。
+
+你可以考虑用到动态导入作为另外一种分割代码成可管理的 chunk。
+
+#### 基础使用
+
+下面的示例，模块 `../components/hello`将被页面动态导入：
+
+```jsx
+import dynamic from "next/dynamic";
+
+const DynamicComponent = dynamic(() => import("../components/hello"));
+
+function Home() {
+  return (
+    <div>
+      <Header />
+      <DynamicComponent />
+      <p>HOME PAGE is here!</p>
+    </div>
+  );
+}
+
+export default Home;
+```
+
+DynamicComponent 将作为 default 组件被`../components/hello`返回。它就像常规的 React 组件一样工作，你可以正常传递属性给它。
+
+#### 命名导出
+
+如果动态组件不是默认导出，你也可以使用命名导出。考虑模块`../components/hello.js`它有命名导出 Hello：
+
+```jsx
+export function Hello() {
+  return <p>Hello!</p>;
+}
+```
+
+为了动态导入 Hello 组件，你可以从`import()`返回的 Promise 中返回它，比如：
+
+```jsx
+import dynamic from "next/dynamic";
+
+const DynamicComponent = dynamic(() =>
+  import("../components/hello").then((mod) => mod.Hello)
+);
+
+function Home() {
+  return (
+    <div>
+      <Header />
+      <DynamicComponent />
+      <p>HOME PAGE is here!</p>
+    </div>
+  );
+}
+
+export default Home;
+```
+
+#### 自定义加载组件
+
+loading 组件是可选的，它渲染表示当动态组件正在加载中的 loading 状态。例如：
+
+```jsx
+import dynamic from "next/dynamic";
+
+const DynamicComponentWithCustomLoading = dynamic(
+  () => import("../components/hello"),
+  { loading: () => <p>...</p> }
+);
+
+function Home() {
+  return (
+    <div>
+      <Header />
+      <DynamicComponentWithCustomLoading />
+      <p>HOME PAGE is here!</p>
+    </div>
+  );
+}
+
+export default Home;
+```
+
+#### 服务端渲染不用
+
+你可能不想在服务端一直包含这个模块，例如，当模块包含的库只在浏览器端生效。
+
+看下下面的示例：
+
+```jsx
+import dynamic from "next/dynamic";
+
+const DynamicComponentWithNoSSR = dynamic(
+  () => import("../components/hello3"),
+  { ssr: false }
+);
+
+function Home() {
+  return (
+    <div>
+      <Header />
+      <DynamicComponentWithNoSSR />
+      <p>HOME PAGE is here!</p>
+    </div>
+  );
+}
+
+export default Home;
+```
+
 ### 自动静态优化
 
-如果没有要求阻塞的数据，Next.js 自动决定页面是否是静态的（可以被预渲染）。这个的判断是依据页面中是否存在`getInitialProps`。
+如果没有要求阻塞的数据，Next.js 自动决定页面是否是静态的（可以被预渲染）。这个的判断是依据页面中是否存在`getServerSideProps`和`getInitialProps`。
 这个特性允许 Next.js 打包出包含服务端渲染和静态生成页面的混合应用
 
 > 静态生成的页面仍然是具有响应式的：Next.js 将混合你客户端的应用使其具有完整的交互性。
@@ -1809,13 +1921,17 @@ setPreviewData(data, {
 `next build`将为静态优化页面构建出.html 文件。举例，`pages/about.js`页面将会生成这的结果
 
 ```
-.next/server/static/${BUILD_ID}/about.html
+
+.next/server/static/\${BUILD_ID}/about.html
+
 ```
 
 如果你添加`getInitialProps`到页面，它的产物结果将是
 
 ```
-.next/server/static/${BUILD_ID}/about.js
+
+.next/server/static/\${BUILD_ID}/about.js
+
 ```
 
 在开发环境下，如果`pages/about.js`被优化，会包含静态优化指示符。
