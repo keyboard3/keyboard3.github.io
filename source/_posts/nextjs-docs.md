@@ -1985,7 +1985,134 @@ npm run build
 - 在静态导出的时候你无法动态渲染 HTML，因为我们预先构建了 HTML 文件。当你不使用 next export 时，你的应用可以是静态生成和服务端渲染的混合体。你可以学习一下[pages 一节](https://nextjs.org/docs/basic-features/pages)
 - API 路由不支持这个方法，因为它们不渲染 HTML。
 
-### AMP 支持
+#### 介绍
+
+使用 Next.js 你可以将任何 React 页面变成 AMP 页面，只需最少的配置，而不需要离开 React。
+
+你可以去[amp.dev 官网](https://amp.dev/)了解更多关于 AMP 的知识
+
+##### 启用 AMP
+
+为了启用对页面 AMP 的支持，要了解更多关于 AMP 的配置，阅读[next/amp 的 API 文档](https://nextjs.org/docs/api-reference/next/amp)
+
+##### 注意
+
+- 只支持 CSS-in-JS，AMP 页面目前不支持 CSS 模块。你可以[贡献 CSS 模块给 Next.js](https://github.com/zeit/next.js/issues/10549)
+
+##### 相关
+
+- [AMP 组件](https://nextjs.org/docs/advanced-features/amp-support/adding-amp-components)
+  使用 AMP 组件让你的页面更具交互性
+- [AMP 验证](https://nextjs.org/docs/advanced-features/amp-support/amp-validation)
+  学习更多关于 Next.js 如何验证 AMP 页面
+
+#### 添加 AMP 组件
+
+AMP 社区提供了[许多组件](https://amp.dev/documentation/components/)使得 AMP 页面更交互性。Next.js 将自动导入页面上使用的 AMP 组件，并且不需要收到导入代码。
+
+```jsx
+export const config = { amp: true };
+
+function MyAmpPage() {
+  const date = new Date();
+
+  return (
+    <div>
+      <p>Some time: {date.toJSON()}</p>
+      <amp-timeago
+        width="0"
+        height="15"
+        datetime={date.toJSON()}
+        layout="responsive"
+      >
+        .
+      </amp-timeago>
+    </div>
+  );
+}
+
+export default MyAmpPage;
+```
+
+上面的案例使用了 amp-timeago 组件
+
+默认，总是导入组件最近的版本。如果你想要自定义版本，你可以使用 next/head，如下案例：
+
+```jsx
+import Head from "next/head";
+
+export const config = { amp: true };
+
+function MyAmpPage() {
+  const date = new Date();
+
+  return (
+    <div>
+      <Head>
+        <script
+          async
+          key="amp-timeago"
+          custom-element="amp-timeago"
+          src="https://cdn.ampproject.org/v0/amp-timeago-0.1.js"
+        />
+      </Head>
+
+      <p>Some time: {date.toJSON()}</p>
+      <amp-timeago
+        width="0"
+        height="15"
+        datetime={date.toJSON()}
+        layout="responsive"
+      >
+        .
+      </amp-timeago>
+    </div>
+  );
+}
+
+export default MyAmpPage;
+```
+
+#### AMP 验证
+
+AMP 页面在开发期间使用[amphtml-validator](https://www.npmjs.com/package/amphtml-validator)自动验证。当你启动 Next.js 错误和警告都会出现在终端。
+
+在静态 HTML 生成期间页面也会被验证，并且错误和警告也被打印在终端。任何 AMP 错误将导致 1 状态码退出，因为导出的不是一个有效的 AMP。
+
+#### 静态导出 HTML 中的 AMP
+
+当使用 next export 导出静态 HTML 预渲染页面，Next.js 检测如果页面支持 AMP，将根据下面改变导出行为。
+
+例如，混合 AMP 页面 `pages/about.js`将导出：
+
+- `out/about.html` -带 React 客户端运行时渲染的 HTML 页面
+- `out/about.amp.html` -AMP 页面
+
+如果`pages/about.js`只是 AMP 页面，将输出：
+
+- `out/about.html` - 优化过的 AMP 页面
+  Next.js 将自动插入 HTML 版本到你 AMP 版本页面，所以你不必这么做，比如：
+
+```html
+<link rel="amphtml" href="/about.amp.html" />
+```
+
+- 你页面的 AMP 版本将自动包括 HTML 页面的链接
+
+```html
+<link rel="canonical" href="/about" />
+```
+
+当为`pages/about.js`启动[exportTrailingSlash](https://nextjs.org/docs/api-reference/next.config.js/exportPathMap#0cf7d6666b394c5d8d08a16a933e86ea)导出页面：
+
+- `out/about/index.html` - HTML page
+- `out/about.amp/index.html` - AMP page
+
+#### TypeScript
+
+AMP 当前不支持内置的 TypeScript 类型，但是这里有它们的路线图[#13791](https://github.com/ampproject/amphtml/issues/13791)
+
+解决方案你可能需要手动创建`amp.d.ts`放到你项目中，并添加自定义类型[描述](https://stackoverflow.com/a/50601125)
 
 ### 自定义 Babel 配置
 
