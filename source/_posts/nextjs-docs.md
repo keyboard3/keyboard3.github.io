@@ -1606,6 +1606,191 @@ next build 构建的生产应用丢到.next 文件夹下。构建之后，next s
 
 ### 预览模式
 
+在页面文档和数据获取文档中，我们讨论了在构建时（静态生成）使用 getStaticProps 和 getStaticPaths 来预渲染页面。
+
+静态生成在你从无头的 CMS 中获取数据非常有用。然而，当你在无头的 CMS 上写下草稿并且想要马上预览它无法实现。你想要 Next.js 在请求时预渲染这些页面而不是在构建时，获取的是草稿箱内容而不是发布内容。你想在这种情况下 Next.js 可以跳过静态生成。
+
+Next.js 有预览功能可以解决这个问题。这里有如何使用的指令。
+
+#### 步骤 1.创建和访问预览 API 路由
+
+> 如果你不熟悉 Next.js API 路由，你需要看下[API 路由 文档](https://nextjs.org/docs/api-routes/introduction)
+
+首先创建预览 API 路由。它可以有任何名字。比如`pages/api/preview.js`(或者如果使用 TypeScript 则是.ts)。
+
+在 API 路由上，你需要在响应对象上调用 setPreviewData。setPreviewData 的参数应该是一个对象，并且它可以被 getStaticProps 使用。现在我们使用的是一个`{}`
+
+```js
+export default (req, res) => {
+  // ...
+  res.setPreviewData({});
+  // ...
+};
+```
+
+`res.setPreviewData`在浏览器上设置一些 cookie 来启动预览模式。Next.js 任何请求包含这个 cookie 都会可能变成预览模式，并且静态生成页面的行为将会发生变化（更详细的在后面）
+
+你可以像下面这样手动创建 API 路由，并通过浏览器访问它：
+
+```js
+// 一个在浏览器上手动测试的简单案例
+//如果是在 pages/api/preview.js上,
+//然后在你的浏览器上打开 `/api/preview`
+export default (req, res) => {
+  res.setPreviewData({});
+  res.end("Preview mode enabled");
+};
+```
+
+如果你使用的是浏览器开发工具，你可能注意到每次请求，cookie 都设置`__prerender_bypass`和`__next_preview_data`
+
+**安全访问无头 CMS**
+
+实践中，你可能想要安全的调用这个 API 访问无头 CMS。具体步骤可能会因为使用的不同的 CMS 而不一样，但是有一些公共的步骤你需要关心。
+
+这些步骤假设你用的无头 CMS 支持设置自定义预览 URLs。否则，你仍然可以使用这个方法来保护你的预览 URLs，但是你需要手动构造和访问这个预览 URL。
+
+首先，你应该使用你选择的 token 生成器来生成一个私密的 token 字符串。这个 token 只有你 Next.js 应用和你的无头 CMS 知道。这个 token 阻止那些没有权限的人访问预览 URL。
+
+然后，如果你的无头 CMS 支持设置自定义 URLs，指定下面的作为预览 URL。（它假设你的预览 API 路由是这样的`pages/api/preview.js`）
+
+```
+https://<your-site>/api/preview?secret=<token>&slug=<path>
+```
+
+- `<your-site>` 应该是你部署的域名
+- `<token>` 应该被替换成你生成的私密 token
+- `<path>` 应该是你想要预览的页面的路径。如果你想要预览`/posts/foo`, 你应该使用`&slug=/posts/foo`
+
+你无头 CMS 应该允许你在预览 URL 中使用变量，所以`<path>`可以被动态根据 CMS 数据设置，比如：`&slug=/posts/{entry.fields.slug}`
+
+最后，在这个预览 API 路由：
+
+- 检查私密 token 匹配并且 slug 参数存在（如果没有，这个请求应该失败）
+- 调用`res.setPreviewData`
+- 然后重定向浏览器到 slug 指定的路径。（下面的案例使用 [307 重定向](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307)）
+
+```js
+export default async (req, res) => {
+  // 检查secret和next参数
+  // 这个secret应该只有这个API路由和CMS知道
+  if (req.query.secret !== "MY_SECRET_TOKEN" || !req.query.slug) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+
+  // 如果提供了slug，获取无头 CMS 数据
+  // getPostBySlug 应该事先获取无头 CMS 逻辑
+  const post = await getPostBySlug(req.query.slug);
+
+  // 如果slug不存在，阻止预览模式启用
+  if (!post) {
+    return res.status(401).json({ message: "Invalid slug" });
+  }
+
+  // 设置cookie启用预览模式
+  res.setPreviewData({});
+
+  // 重定向路径到获取到的post的slug
+  // 我们不能重定向查询参数的slug,因为可能会造成潜在的漏洞
+  res.writeHead(307, { Location: post.slug });
+  res.end();
+};
+```
+
+如果成功，浏览器都会重定向你想要预览的路径。
+
+#### 步骤 2.更新 getStaticProps
+
+下一个步骤就是更新 getStaticProps 来支持预览模式。
+
+如果你请求的页面的 getStaticProps 支持预览模式设置(通过 `res.setPreviewData`)，然后 getStaticProps 将在请求时被调用（而不是在构建时）
+
+进一步，它会带着 context 对象调用：
+
+- context.preview 将是 true
+- context.previewData 将与 setPreviewData 的参数相同
+
+```js
+export async function getStaticProps(context) {
+  // 如果设置了预览模式请求页面
+  //
+  // - context.preview 是 true
+  // - context.previewData 将与 setPreviewData 的参数相同
+}
+```
+
+我们在预览 API 路由中使用`res.setPreviewData({})`，所以 context.previewData 将被设置成 `{}`。你如果需要你可以在预览 API 路由中像 getStaticProps 传递会话信息。
+
+如果你也使用了 getStaticPaths，context.params 也会生效。
+
+**获取预览数据**
+
+你可以更新 getStaticProps 根据 context.preview 和 context.previewData 获取不同的数据。
+
+举例，你无头 CMS 可能访问草稿文章用不同的 API。如果这样，你可以使用 context.preview 来修改 API,比如下面这样。
+
+```js
+export async function getStaticProps(context) {
+  // 如果 context.preview is true, 则向API路径添加 "/preview"
+  // 去请求草稿内容而不是发布内容. 这非常依赖于你使用的CMS.
+  const res = await fetch(`https://.../${context.preview ? "preview" : ""}`);
+  // ...
+}
+```
+
+到此！如果你带着 secret 和 slug 访问你的预览 API 路由，你应该看到预览内容。并且如果你更新草稿内容，你应该可以预览这个草稿。
+
+```
+# Set this as the preview URL on your headless CMS or access manually,
+# and you should be able to see the preview.
+https://<your-site>/api/preview?secret=<token>&slug=<path>
+```
+
+#### 更多案例
+
+...略
+
+#### 更多详情
+
+**清除预览模式 cookies**
+
+默认情况下，没有给预览模式 cookie 设置有效期，所以当浏览器关闭预览模式结束。
+
+为手动清除预览模式 cookies,你可以创建 API 路由来调用 clearPreviewData，然后访问这个 API 路由。
+
+```js
+export default (req, res) => {
+  // Clears the preview mode cookies.
+  // This function accepts no arguments.
+  res.clearPreviewData();
+  // ...
+};
+```
+
+**指定预览模式有效期**
+
+setPreviewData 的第二个可选参数，它是一个 options 对象。它接受下面的 keys：
+
+- maxAge：指定预览回话要持续的时间（但为是秒）
+
+```js
+setPreviewData(data, {
+  maxAge: 60 * 60, // The preview mode cookies expire in 1 hour
+});
+```
+
+**previewData 大小限制**
+
+你可以传递对象给 setPreviewData，它在 getStaticProps 中有效。然而，因为数据是存在 cookie 中，它们有大小限制。当前预览数据限制为 2KB。
+
+**getServerSideProps 一起工作**
+
+预览模式统一可以在 getServerSideProps 工作很好。它的 context 对象也包含 preview 和 previewData
+
+**每次`next build`唯一**
+
+当 next build 运行，旁路的 cookie 和加密的 previewData 的私钥会更改，它会保证旁路的 cookie 不会被猜到。
+
 ### 动态导入
 
 ### 自动静态优化
