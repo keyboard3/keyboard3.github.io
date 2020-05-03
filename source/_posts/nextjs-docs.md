@@ -2870,7 +2870,293 @@ export default DynamicBundle;
 
 ## CLI
 
+Next.js CLI 允许你启动，构建和导出那你的应用程序。
+
+为了获得有效的 CLI 命令列表，在你的项目目录下运行这些命令：
+
+```
+npx next -h
+```
+
+(npx 出现在 npm5.2 及以上)
+这个的输出应该是这样：
+
+```
+Usage
+  $ next <command>
+
+Available commands
+  build, start, export, dev, telemetry
+
+Options
+  --version, -v   Version number
+  --help, -h      Displays this message
+
+For more information run a command with the --help flag
+  $ next build --help
+```
+
+你可以像 next 命令传递任何 [node 参数](https://nodejs.org/api/cli.html#cli_node_options_options)
+
+```
+NODE_OPTIONS='--throw-deprecation' next
+NODE_OPTIONS='-r esm' next
+NODE_OPTIONS='--inspect' next
+```
+
+### 构建
+
+next build 为你的应用穿件一个优化过的生产构建。每个路由输出的信息是这样的：
+
+- Size -在客户端跳转到页面需要下载的资源大小。每个路由大小只包含它自己的依赖
+- First Load JS - 访问服务端这个页面需要下载的资源大小。所有共享的 JS 大小作为单独的指标
+
+第一次加载的颜色会是绿色，黄色，或者红色。为高性能一能用提供的是绿色。
+
+### 遥测
+
+Next.js 收集有关常用使用的完全异步的遥测数据。
+参与此匿名程序是可选的，如果你不喜欢共享这些数据你可以退出。
+
+[读这个文档](https://nextjs.org/telemetry/)进一步学习遥测
+
 ## next/router
+
+路由管理器
+
+### useRouter
+
+如果你想要在你应用的任何函数组件中访问[路由管理器对象](https://nextjs.org/docs/api-reference/next/router#router-object)，你应该使用 useRouter 钩子，看下下面的示例：
+
+```jsx
+import { useRouter } from "next/router";
+
+function ActiveLink({ children, href }) {
+  const router = useRouter();
+  const style = {
+    marginRight: 10,
+    color: router.pathname === href ? "red" : "black",
+  };
+
+  const handleClick = (e) => {
+    e.preventDefault();
+    router.push(href);
+  };
+
+  return (
+    <a href={href} onClick={handleClick} style={style}>
+      {children}
+    </a>
+  );
+}
+
+export default ActiveLink;
+```
+
+> useRouter 是一个 React 钩子，意味着它无法被使用在类中。你可以选择使用 [withRouter](https://nextjs.org/docs/api-reference/next/router#withrouter) 或者将 class 包装在函数组件中
+
+#### router object
+
+下面是 router 对象的定义，useRouter 和 withRouter 都会返回改对象：
+
+- pathname: String - 当前路由，它是`/pages`下页面的路径
+- query: Object - 查询参数被解析成对象，默认是 {}
+- asPath: String - 限制在浏览器中实际路径（包括查询）
+
+另外，Router API 也被包含在这个对象中。
+
+> 如果页面被静态优化，那么在预渲染期间这个 query 对象是空的
+
+### withRouter
+
+如果 useRouter 不适合你，withRouter 同样可以添加相同的 router 对象给任何组件，这里是如何使用它：
+
+```jsx
+import { withRouter } from "next/router";
+
+function Page({ router }) {
+  return <p>{router.pathname}</p>;
+}
+
+export default withRouter(Page);
+```
+
+### Router API
+
+Router 的 API，由`next/router`导出，api 定义如下。
+
+#### Router.push
+
+处理客户端过度，当[next/link](https://nextjs.org/docs/api-reference/next/link)不够用的时候，这个方法非常有用。
+
+```js
+import Router from "next/router";
+
+Router.push(url, as, options);
+```
+
+- url - 导航的 URL。它通常是页面的名字
+- as - 显示到浏览器上 URL 的可选装饰器，默认是 url
+- options - 具有以下配置选项的可选对象
+  - shallow: 只更新当前页面的路径，而不重新运行 getStaticProps，getServerSideProps 或者 getInitialProps。默认是 false
+
+> 对于外部 URL，你不需要使用 Router，window.location 是更适合这些情况。
+
+#### 使用
+
+导航到`pages/about.js`这个预定义路由：
+
+```jsx
+import Router from "next/router";
+
+function Page() {
+  return <span onClick={() => Router.push("/about")}>Click me</span>;
+}
+```
+
+导航到`pages/post/[pid].js`这样的动态路由：
+
+```jsx
+import Router from "next/router";
+
+function Page() {
+  return (
+    <span onClick={() => Router.push("/post/[pid]", "/post/abc")}>
+      Click me
+    </span>
+  );
+}
+```
+
+#### 带 URL 对象
+
+你可以像`next/link`那样的方式带 URL 对象。适用 url 和 as 参数：
+
+```jsx
+import Router from "next/router";
+
+const handler = () => {
+  Router.push({
+    pathname: "/about",
+    query: { name: "Zeit" },
+  });
+};
+
+function ReadMore() {
+  return (
+    <div>
+      Click <span onClick={handler}>here</span> to read more
+    </div>
+  );
+}
+
+export default ReadMore;
+```
+
+#### Router.replace
+
+类似于`next/link`的 replace 属性，Router.replace 将阻止添加新的 URL 到 history 堆栈，看下下面的实例：
+
+```js
+import Router from "next/router";
+
+Router.replace("/home");
+```
+
+Router.replace 的 API 和 Router.push 的用法完全相同
+
+#### Router.beforePopState
+
+在某些情况下（举例，如果使用的是自定义 Server），你可能希望监听[弹出状态](https://developer.mozilla.org/en-US/docs/Web/Events/popstate)并想在路由管理执行动作之前做些事情。
+
+你可以使用它来操作请求，或者强制 SSR 刷新，如下案例：
+
+```js
+import Router from "next/router";
+
+Router.beforePopState(({ url, as, options }) => {
+  // 我只想允许这两个路由
+  if (as !== "/" && as !== "/other") {
+    // 让SSR呈现错误路由为404
+    window.location.href = as;
+    return false;
+  }
+
+  return true;
+});
+```
+
+`Router.beforePopState(cb: () => boolean)`
+
+- cb -在传入的 popstate 事件上运行这个函数。这个函数接收事件状态，该事件是具有以下属性的对象：
+  - url: String - 新状态的路由。通常是页面的名字
+  - as: String - 显示在浏览器的 url
+  - options: Object - Router.push 发送的额外选项
+
+如果你传递给 beforePopState 的函数返回了 false,Router 将不处理 popstate 并且 你将响应处理它。看[禁止文件路由](https://nextjs.org/docs/advanced-features/custom-server#disabling-file-system-routing)
+
+#### Router.events
+
+你可以监听发生在 Router 内部的不同事件。这里是支持的事件列表：
+
+- routeChangeStart(url) - 当路由开始变化
+- routeChangeComplete(url) - 当路由变化完成
+- routeChangeError(err, url) - 当改变路由时发生错误或者路由加载被取消
+  - err.cancelled - 表明导航是否被取消
+- beforeHistoryChange(url) - 只在浏览器 history 变化之前触发
+- hashChangeStart(url) - hash 值将发生变化但页面不变化
+- hashChangeComplete(url) - 当 has 变化完成页面不变化
+
+> 这里的 URL 是显示在浏览器的 url。如果你调用`Router.push(url, as)`，然后这个 url 值将是 as 的值
+
+例如，监听路由事件 routeChangeStart：
+
+```js
+import Router from "next/router";
+
+const handleRouteChange = (url) => {
+  console.log("App is changing to: ", url);
+};
+
+Router.events.on("routeChangeStart", handleRouteChange);
+```
+
+如果你不在想监听这个事件，使用 off 函数取消订阅：
+
+```js
+import Router from "next/router";
+
+Router.events.off("routeChangeStart", handleRouteChange);
+```
+
+如果路由加载被取消（举例，通过快速的连续点击两次链接），routeChangeError 将触发。并且传入的 err 将包含 cancelled 为 true，如下：
+
+```js
+import Router from "next/router";
+
+Router.events.on("routeChangeError", (err, url) => {
+  if (err.cancelled) {
+    console.log(`Route to ${url} was cancelled!`);
+  }
+});
+```
+
+路由事件应该在页面被挂载的时候注册（useEffect 或者 componentDidMount/ComponentWillUnmount)或者事件必定发生，如下：
+
+```js
+import Router from "next/router";
+
+useEffect(() => {
+  const handleRouteChange = (url) => {
+    console.log("App is changing to: ", url);
+  };
+
+  Router.events.on("routeChangeStart", handleRouteChange);
+  return () => {
+    Router.events.off("routeChangeStart", handleRouteChange);
+  };
+}, []);
+```
 
 ## next/head
 
@@ -2932,6 +3218,79 @@ export default IndexPage
 > `title`和`meta`元素是`Head`的直接子组件，或者包裹在`<React.Fragment>`下，否则 meta 标签不会正确的被服务端渲染找到
 
 ## next/amp
+
+> AMP 支持是我们的一个高级特性，你可以进一步[阅读](https://nextjs.org/docs/advanced-features/amp-support/introduction)
+
+为了启用 AMP，添加下面的配置给你的页面：
+
+```js
+export const config = { amp: true };
+```
+
+这个 amp 配置接收下面的值：
+
+- true -页面只是 AMP
+- 'hybird' - 页面只有两个版本，AMP 和 HTML
+
+### AMP 第一页
+
+看下面的案例：
+
+```jsx
+export const config = { amp: true };
+
+function About(props) {
+  return <h3>My AMP About Page!</h3>;
+}
+
+export default About;
+```
+
+上面页面只是 AMP,意味着：
+
+- 该页面没有 Next.js 或者 React 客户端运行时
+- 该页面使用[AMP 优化器](https://github.com/ampproject/amp-toolbox/tree/master/packages/optimizer)自动优化，这个优化器用 AMP 缓存（将性能多提高 42%）
+- 这个页面有优化的用户可访问版本，和未优化过的搜索引擎索引的版本
+
+### 混合 AMP 页面
+
+看下面的案例：
+
+```jsx
+import { useAmp } from "next/amp";
+
+export const config = { amp: "hybrid" };
+
+function About(props) {
+  const isAmp = useAmp();
+
+  return (
+    <div>
+      <h3>My AMP About Page!</h3>
+      {isAmp ? (
+        <amp-img
+          width="300"
+          height="300"
+          src="/my-img.jpg"
+          alt="a cool image"
+          layout="responsive"
+        />
+      ) : (
+        <img width="300" height="300" src="/my-img.jpg" alt="a cool image" />
+      )}
+    </div>
+  );
+}
+
+export default About;
+```
+
+上面的页面是混合 AMP 页面，意味着：
+
+- 这个页面默认渲染成传统的 HTML，通过加?amp=1 渲染成 AMP HTML
+- 页面的 AMP 版本只对 AMP 优化器应用了有效优化，所以它可以被搜索引擎索引
+
+这个页面使用了 useAmp 来区分两个模式，如果页面使用了 AMP，它的 React 钩子返回 true，否则 false。
 
 ## Data Fetching
 
