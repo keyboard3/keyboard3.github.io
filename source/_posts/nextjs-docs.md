@@ -2813,6 +2813,59 @@ export default DynamicBundle;
 
 ## 常见问题
 
+### 频繁问的问题
+
+- 那些浏览器支持
+  Next.js 使用`@babel/preset-env`开箱即用的支持 IE11 和其他现代浏览器。为了支持 IE11 添加全局的 Promise polyfill。
+
+  如果你自己的代码或者你使用的外部 npm 依赖用来你目标浏览器不支持的特性，你需要实现 polyfills。如果你需要实现 polyfills，这个[polyfills](https://github.com/zeit/next.js/tree/canary/examples/with-polyfills)案例演示了最佳实现方式
+
+- 这个产品准备好了吗？
+  自 Next.js 成立依赖，一直为[https://vercel.com ](https://vercel.com)提供支持。
+
+  我们对开发者的体验和用户端性能都非常满意，所以我们决定分享给社区。
+
+- 有多大
+  客户端包带下应该每个应用衡量。最小的 Next 珠宝大约压缩后 65kb.
+
+- 我如何改变内部 webpack 配置
+  Next.js 尽力消除 webpack 配置的开销，但是对于需要更多控制的高级情况，参考[自定义 webpack 配置文档](https://nextjs.org/docs/api-reference/next.config.js/custom-webpack-config)
+
+- 编译了那些语法功能？我如何修改它们？
+  我们跟随 v8。由于 v8 对 ES6 的 async 和 await 支持，所以我们编译它们。由于 v8 不支持 class 装饰器，我们也不会编译它们。
+
+  查看[自定义 babel 配置](https://nextjs.org/docs/advanced-features/customizing-babel-config)了解更多
+
+- 为什么要用新 Router？
+  Next.js 特殊之处在于：
+
+  - 路由不需要提前知道，我们不运送路由清单
+  - 路由一直是懒加载
+
+- 我如何获取数据？
+  由你决定，那你可以在你 React 组件中通过 fetch api 或者 SWR 获取远程数据；或者使用我们的数据获取方法来进行初始互数据的填充
+
+- 我可以和 GraphQL 一起使用吗？
+  可以，这里是[Apollo 案例](https://github.com/zeit/next.js/tree/canary/examples/with-apollo)
+
+- 我可以和 Redux 一起使用吗？
+  可以，这里是[案例](https://github.com/zeit/next.js/tree/canary/examples/with-redux)。并且这里有其他的[带 thunk 的案例](https://github.com/zeit/next.js/tree/canary/examples/with-redux-thunk)
+
+- 静态资源我可以使用 CDN 吗？
+  可以，你可以在[这里](https://nextjs.org/docs/api-reference/next.config.js/cdn-support-with-asset-prefix)了解更多
+
+- 我可以在 Next 中使用最喜爱的 js 库或者工具集吗？
+  自从我们第一个版本，我们有许多案例贡献。你可以在[examples](https://github.com/zeit/next.js/tree/canary/examples)目录下查看
+
+- 这是受什么启发
+  我们设置的许多实现的目标都是 Guillermo Rauch 提出的[7 个富 web 应用原则](https://rauchg.com/2014/7-principles-of-rich-web-applications)之上
+
+  PHP 的易用性是一个很大的启发。我们认为 Next.js 应该是在很多场景下的替代品，否则你应该使用 PHP 输出 HTML。
+
+  与 PHP 不同，我们受益于 ES6 模块系统，每个页面导出的组件和函数都可以轻松的导入以进行懒惰评估或者测试。
+
+  在研究不涉及大量步骤的 React 服务端渲染配置项时，我们遇到了 React-page（已抛弃），这是 React Jordan Walke 的创建者与 Next.js 类似的方法
+
 # API 文档
 
 ## CLI
