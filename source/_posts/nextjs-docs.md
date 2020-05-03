@@ -2601,6 +2601,216 @@ src 目录在许多应用中都非常常用，Next.js 默认也支持
 
 ## 升级指南
 
+### 升级从 8 到 9
+
+#### 前言
+
+**在 Vercel 生产部署**
+
+如果你之前为了动态路由在你的 now.json 文件中配置了 routes，当升级 Next.js9 的新动态路由功能时，这些规则可以被删除了。
+
+Next.js 9 的动态路由是自动在 Now 上配置的，并不要求任何 now.json 的自定义
+
+你可以阅读[动态路由更多信息](https://nextjs.org/docs/routing/dynamic-routes)
+
+**检查自定义的(`pages/_app.js`)**
+
+如果你之前拷贝了自定义`<app>`的案例，你可以要删除你的 getInitialProps。
+
+若有可能从`pages/_app.js`删除 getInitialProps，这是迁移 Next.js 新功能的关键。
+
+下面的 getInitialProps 不做任何事情，可以删除掉
+
+```js
+class MyApp extends App {
+  // Remove me, I do nothing!
+  static async getInitialProps({ Component, ctx }) {
+    let pageProps = {};
+
+    if (Component.getInitialProps) {
+      pageProps = await Component.getInitialProps(ctx);
+    }
+
+    return { pageProps };
+  }
+
+  render() {
+    // ... etc
+  }
+}
+```
+
+#### 重大变化
+
+**`@zeit/next-typescript`不再需要**
+
+Next.js 将忽略用法`@zeit/next-typescript`并警告你删除它。请从 next.config.js 中删除这个插件。
+
+如果存在，从你自定义的.babelrc 中删除`@zeit/next-typescript/babel`的引用。
+
+你的 next.config.js 的`fork-ts-checker-webpack-plugin`应该被删除
+
+next 包发布了 TypeScript 定义，所以你需要卸载`@types/next`，否则会冲突。
+
+它们的类型也有些不同：
+
+> 社区创建的列表帮助你升级，如果你其他不同的，请给这个 list 提 pull 请求，帮助其他人。
+
+From：
+
+```js
+import { NextContext } from "next";
+import { NextAppContext, DefaultAppIProps } from "next/app";
+import { NextDocumentContext, DefaultDocumentIProps } from "next/document";
+```
+
+to
+
+```js
+import { NextPageContext } from "next";
+import { AppContext, AppInitialProps } from "next/app";
+import { DocumentContext, DocumentInitialProps } from "next/document";
+```
+
+**现在 config key 是页面的特殊导出**
+
+你可能不再从页面导出自定义的 config 变量(比如: `export { config }`/ `export const config ...`)。现在这个导出的变量被用哪个来指定页面级的 Next.js 配置，比如启用 AMP 和 API 路由功能。
+
+你必须将非 Next.js 用途的 config 的导出重命名为其他
+
+**`next/dynamic`不再加载中渲染 loading...**
+
+动态组件加载时默认不在渲染任何东西。你仍可以设置 loading 属性来自定义这个行为。
+
+```jsx
+import dynamic from "next/dynamic";
+
+const DynamicComponentWithCustomLoading = dynamic(
+  () => import("../components/hello2"),
+  {
+    loading: () => <p>Loading</p>,
+  }
+);
+```
+
+**withAmp 已经被删除，为了导出配置对象**
+
+Next.js 现在有页面级配置的概念，所以 withAmp 高级函数组件为了一致性可以删除。
+
+这个改变可以通过在 Next.js 项目的根目录下运行这些命令自动完成迁移：
+
+```
+curl -L https://github.com/zeit/next-codemod/archive/master.tar.gz | tar -xz --strip=2 next-codemod-master/transforms/withamp-to-config.js npx jscodeshift -t ./withamp-to-config.js pages/**/*.js
+```
+
+手动执行这个迁移，或者想看下程序是如何做的，看下面：
+**之前**
+
+```js
+import { withAmp } from "next/amp";
+
+function Home() {
+  return <h1>My AMP Page</h1>;
+}
+
+export default withAmp(Home);
+// or
+export default withAmp(Home, { hybrid: true });
+```
+
+**之后**
+
+```js
+export default function Home() {
+  return <h1>My AMP Page</h1>;
+}
+
+export const config = {
+  amp: true,
+  // or
+  amp: "hybrid",
+};
+```
+
+**next export 不再导出页面成 index.html**
+
+之前导出`pages/about.js`的结果是`out/about/index.html`。这个行为已经改成结果为`out/about.html`。
+
+你可以通过创建带下面内容的 next.config.js 文件来还原之前的行为：
+
+```js
+// next.config.js
+module.exports = {
+  exportTrailingSlash: true,
+};
+```
+
+**`./pages/api/` 处理方式有些不一样**
+
+页面中的`./pages/api/`被认为是 API 路由。这个目录的页面将不再被打包到客户端
+
+#### 过时功能
+
+**`next/dynamic` 已经废弃一次加载多个模块**
+`next/dynamic`一次加载多个模块的能力已经被废弃，为了更贴近 React 的实现(`React.lazy`和`Suspense`)。
+
+依赖这个行为的代码更新相对简单！我们提供了 before/after 的案例来帮助你迁移应用。
+
+**Before**
+
+```jsx
+import dynamic from "next/dynamic";
+
+const HelloBundle = dynamic({
+  modules: () => {
+    const components = {
+      Hello1: () => import("../components/hello1").then((m) => m.default),
+      Hello2: () => import("../components/hello2").then((m) => m.default),
+    };
+
+    return components;
+  },
+  render: (props, { Hello1, Hello2 }) => (
+    <div>
+      <h1>{props.title}</h1>
+      <Hello1 />
+      <Hello2 />
+    </div>
+  ),
+});
+
+function DynamicBundle() {
+  return <HelloBundle title="Dynamic Bundle" />;
+}
+
+export default DynamicBundle;
+```
+
+**after**
+
+```jsx
+import dynamic from "next/dynamic";
+
+const Hello1 = dynamic(() => import("../components/hello1"));
+const Hello2 = dynamic(() => import("../components/hello2"));
+
+function HelloBundle({ title }) {
+  return (
+    <div>
+      <h1>{title}</h1>
+      <Hello1 />
+      <Hello2 />
+    </div>
+  );
+}
+
+function DynamicBundle() {
+  return <HelloBundle title="Dynamic Bundle" />;
+}
+
+export default DynamicBundle;
+```
+
 ## 常见问题
 
 # API 文档
