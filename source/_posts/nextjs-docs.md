@@ -2116,7 +2116,158 @@ AMP 当前不支持内置的 TypeScript 类型，但是这里有它们的路线�
 
 ### 自定义 Babel 配置
 
+Next.js 为你的应用包含 next/babel 预设，它包含编译 React 应用和服务端代码需要的一切。但是如果你想要扩展默认的 Babel 配置，是可能的。
+
+开始，你只需要在你应用的顶层创建一个 .babelrc 文件，如果这个文件找到，我们将认为这是真理的源头，需要它定义 Next.js 的需求，是 next/babel 的预设。
+
+这里是 .babelrc 文件的案例：
+
+```js
+{
+  "presets": ["next/babel"],
+  "plugins": []
+}
+```
+
+这个 next/babel 预设包括：
+
+- preset-env
+- preset-react
+- preset-typescript
+- plugin-proposal-class-properties
+- plugin-proposal-object-reset-spread
+- plugin-transform-runtime
+- styled-jsx
+
+为了配置这些预设插件，请不要添加它们到 presets 或者 plugins。而应该配置它们到 next/babel 预设中。
+
+```js
+{
+  "presets": [
+    [
+      "next/babel",
+      {
+        "preset-env": {},
+        "transform-runtime": {},
+        "styled-jsx": {},
+        "class-properties": {}
+      }
+    ]
+  ],
+  "plugins": []
+}
+```
+
+为了学习每个配置更多有效的参数配置，访问这些文档站点。
+
+> Next.js 使用当前的 Node.js 版本进行服务端编译。
+
+> preset-env 的 modules 参数配置应该一直是 false, 否则 将关闭 webpack 的代码拆分
+
 ### 自定义 PostCSS 配置
+
+Next.js 使用 PostCSS 为内置的 CSS 支持编译 CSS。
+
+开箱即用，不需要任何配置，Next.js 使用下面的转换编译 CSS：
+
+1. [Autoprefixer](https://github.com/postcss/autoprefixer)自动添加供应商前缀给 CSS 规则（退回到 IE11）
+2. [扩浏览器的 Flexbox bugs](https://github.com/philipwalton/flexbugs)被修复使得它的行为和规范一致
+3. 新 CSS 特性将自动编译支持 IE11 的兼容
+
+- [all Property](所有属性)
+- [Break Properties](断裂属性)
+- [font-variant Property](字体变化属性)
+- [Gap Properties](间隙属性)
+- [Media Query Ranges](媒体查询范围)
+
+默认，[自定义属性](CSS 变量)是不兼容 IE11
+
+CSS 变量未编译，因为它还[无法被安全的编译](https://github.com/MadLittleMods/postcss-css-variables#caveats)。如果你一定要使用变量，考虑使用像 Sass 这样的变量，它被 Sass 给编译掉了。
+
+> 注意：为了支持[Grid Layout](https://developer.mozilla.org/en-US/docs/Web/CSS/grid), 你需要启用`grid: "autoplace"`自动前缀，看下面的自定义插件
+
+#### 自定义目标浏览器列表
+
+Next.js 通过[Browserslist](https://github.com/browserslist/browserslist)允许你配置目标浏览器列表(补充前缀和编译 css)
+
+为了自定义 browserslist，在 package.json 中创建 browserslist 的 key：
+
+```json
+{
+  "browserslist": [">0.3%", "not ie 11", "not dead", "not op_mini all"]
+}
+```
+
+你可以使用[browserl.ist](https://browserl.ist/?q=%3E0.3%25%2C+not+ie+11%2C+not+dead%2C+not+op_mini+all)工具可视化你想要的浏览器
+
+#### CSS 模块
+
+支持 CSS 模块不需要任何配置。为文件启用 CSS 模块，请重命名文件为 .module.css 的扩展。
+
+你可以学习关于[Next.js CSS 模块的支持]https://nextjs.org/docs/basic-features/built-in-css-support()
+
+#### 自定义插件
+
+> 警告：当你定义一个自定义 PostCSS 配置文件，Next.js 会完全禁止它的默认行为。确保你编译的所有功能都需要你手动配置，包括[Autoprefixer](https://github.com/postcss/autoprefixer)。你需要手动安装你自定义配置中的所有插件，比如:`npm install postcss-flexbugs-fixes`
+
+为了自定义 PostCSS 配置，在项目的根目录创建 postcss.config.json
+
+Next.js 使用的默认配置：
+
+```js
+{
+  "plugins": [
+    "postcss-flexbugs-fixes",
+    [
+      "postcss-preset-env",
+      {
+        "autoprefixer": {
+          "flexbox": "no-2009"
+        },
+        "stage": 3,
+        "features": {
+          "custom-properties": false
+        }
+      }
+    ]
+  ]
+}
+```
+
+> 注意：Next.js 也允许文件重命名成 .postcssrc.json，或者从 package.json 的 postcss key 中读取。
+
+也能通过 postcss.config.js 文件配置 PostCSS，当你想要根据环境来区别使用配置的时候很有用。
+
+```js
+module.exports = {
+  plugins:
+    process.env.NODE_ENV === "production"
+      ? [
+          "postcss-flexbugs-fixes",
+          [
+            "postcss-preset-env",
+            {
+              autoprefixer: {
+                flexbox: "no-2009",
+              },
+              stage: 3,
+              features: {
+                "custom-properties": false,
+              },
+            },
+          ],
+        ]
+      : [
+          // No transformations in development
+        ],
+};
+```
+
+> 注意： Next.js 也允许文件名重命名为 .postcssrc.js
+
+不要使用 `require()`来导入 PostCSS 插件，插件一定用字符串来提供。
+
+> 如果你的 postcss.config.js 需要在这个项目下支持其他非 Next.js 工具，你一定要使用客户操作的基于对象的格式
 
 ### 自定义 Server
 
@@ -2195,13 +2346,258 @@ module.exports = {
 
 ### 自定义`App`
 
+Next.js 使用 App 组件来初始化所有页面。你可以重写它并控制页面初始化。那些事情允许你做的：
+
+- 在不同页面之前持久化相同布局
+- 当导航页面时保持状态
+- 使用 componentDidCatch 来自定义错误处理
+- 向页面注入额外的数据
+- [添加全局 CSS](https://nextjs.org/docs/basic-features/built-in-css-support#adding-a-global-stylesheet)
+
+为了重写默认的 App，创建如下的 `./pages/_app.js` 文件：
+
+```jsx
+// import App from 'next/app'
+
+function MyApp({ Component, pageProps }) {
+  return <Component {...pageProps} />;
+}
+
+// 只有在你每个页面都有阻塞数据请求的需求是才取消这些代码注释
+// 它会阻止自动静态优化，造成你应用的每个页面都被服务端渲染
+//
+// MyApp.getInitialProps = async (appContext) => {
+//   // calls page's `getInitialProps` and fills `appProps.pageProps`
+//   const appProps = await App.getInitialProps(appContext);
+//
+//   return { ...appProps }
+// }
+
+export default MyApp;
+```
+
+这个 Component 原型是当前激活的页面，所以你在路由之间跳转，Component 都会变成这个新页面。然而，你发送给 Component 的任何属性都会被这个页面接收。
+
+pageProps 是页面预加载初始属性的对象。如果你页面没有使用 getInitialProps 则是一个空对象。
+
+> 在你的 App 中添加 getInitialProps 将禁止自动静态优化
+
+#### TypeScript
+
+如果你使用 TypeScript，看下[TypeScript 文档](https://nextjs.org/docs/basic-features/typescript#custom-app)
+
 ### 自定义 `Document`
+
+自定义 Document 通常被用来增加你应用的 html 和 body 标签。这非常有必要，因为 Next.js 页面需要跳过包括 document 的标签定义。
+
+一个自定义 Document 可以包含 getInitialProps 来表达同步的服务端数据渲染要求。
+
+为了重写默认的 Document，创建`./pages/_document.js`文件下面那样继承 Document 类：
+
+```jsx
+import Document, { Html, Head, Main, NextScript } from "next/document";
+
+class MyDocument extends Document {
+  static async getInitialProps(ctx) {
+    const initialProps = await Document.getInitialProps(ctx);
+    return { ...initialProps };
+  }
+
+  render() {
+    return (
+      <Html>
+        <Head />
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
+}
+
+export default MyDocument;
+```
+
+<Html>, <Head />, <Main /> and <NextScript /> 页面正确渲染必须的。
+
+自定义的 attributes 允许作为 props，比如 lang
+
+```html
+<html lang="en"></html>
+```
+
+这个 ctx 对象等价于 getInitialProps 接收的，但是多了一项：
+
+- renderPage: Function - 运行实际 React 渲染逻辑（同步）的回调。包装这个函数用来支持服务端渲染包装器比如 Aphrodite 的[renderStatic](https://github.com/Khan/aphrodite#server-side-rendering)非常有用。
+
+#### 注意事项
+
+- Document 只在服务端渲染，事件处理器不会工作(onClick)
+- `<Main />`外部的 React 组件不会被浏览器初始化。不要在这里添加应用逻辑。如果你需要在页面之间共享组件（比如菜单栏目和工具栏目），尝试使用 App 组件来替代
+- Document 的 getInitialProps 函数不会再客户端转化期间调用，也不会在静态优化页面时执行。
+- 确认是否在 getInitialProps 中定义了 ctx.req 和 ctx.res。当页面被自动静态化或者 next export 导出时，这些变量都是未定义的。
+- 常见的错误包括添加 title 和 Head 标签或者使用 styled-jsx。因为在 `pages/_document.js`中避免它们，否则会造成意外行为。
+
+#### 自定义 renderPage
+
+> 需要注意的是你使用自定义 renderPage 的唯一原因应该是使用 css-in-js 库时，这些库包裹应用程序以正确的显示服务端渲染。
+
+它采用一个 options 对象作为进一步自定义的参数：
+
+```jsx
+import Document from "next/document";
+
+class MyDocument extends Document {
+  static async getInitialProps(ctx) {
+    const originalRenderPage = ctx.renderPage;
+
+    ctx.renderPage = () =>
+      originalRenderPage({
+        // 包裹整个react树有用
+        enhanceApp: (App) => App,
+        // 对每一页的基础包裹有用
+        enhanceComponent: (Component) => Component,
+      });
+
+    // 运行父类的getInitialProps，它现在包括自定义的renderPage
+    const initialProps = await Document.getInitialProps(ctx);
+
+    return initialProps;
+  }
+}
+
+export default MyDocument;
+```
 
 ### 自定义错误页面
 
+#### 404 页面
+
+404 页面可能访问非常频繁。每次访问都服务端渲染会增加 Next.js 服务的负载。这样会导致成本增加和很低的用户体验。
+
+为了避免上诉的陷阱，Next.js 添加了静态的 404 页面，默认不需要任何额外的文件。
+
+##### 自定义 404 页面
+
+为了自定义 404 页面，你可以创建一个`pages/404.js`文件。这个文件在构建时静态生成。
+
+```js
+// pages/404.js
+export default function Custom404() {
+  return <h1>404 - Page Not Found</h1>;
+}
+```
+
+#### 500 页面
+
+默认 Next.js 提供 500 错误页，样式和默认的 404 页面一样。这个页面没有自动静态化，允许报告服务端错误。这是为什么 404 和 500（其他错误）被分隔的原因。
+
+##### 自定义错误页面
+
+500 错误被客户端和服务端的 Error 组件处理掉。如果你希望重写它，定义错误文件`pages/_error.js`并添加以下代码：
+
+```jsx
+function Error({ statusCode }) {
+  return (
+    <p>
+      {statusCode
+        ? `An error ${statusCode} occurred on server`
+        : "An error occurred on client"}
+    </p>
+  );
+}
+
+Error.getInitialProps = ({ res, err }) => {
+  const statusCode = res ? res.statusCode : err ? err.statusCode : 404;
+  return { statusCode };
+};
+
+export default Error;
+```
+
+> `pages/_error.js`只在生产环境中被使用。在开发环境下你会获得完整的错误堆栈来知道原始错误出现在哪里。
+
+##### 复用内置的错误页面
+
+如果要渲染内置的错误页，你可以导入 Error 组件：
+
+```jsx
+import Error from "next/error";
+import fetch from "node-fetch";
+
+export async function getServerSideProps() {
+  const res = await fetch("https://api.github.com/repos/zeit/next.js");
+  const errorCode = res.ok ? false : res.statusCode;
+  const json = await res.json();
+
+  return {
+    props: { errorCode, stars: json.stargazers_count },
+  };
+}
+
+export default function Page({ errorCode, stars }) {
+  if (errorCode) {
+    return <Error statusCode={errorCode} />;
+  }
+
+  return <div>Next stars: {stars}</div>;
+}
+```
+
+这个错误组件同样也接收 title 作为属性，如果你想传递除了 statusCode 的文本消息。
+
 ### `src`目录
 
-### 多个时间区
+也可以添加页面到`src/pages`下来替代根目录的 pages 目录。
+
+src 目录在许多应用中都非常常用，Next.js 默认也支持
+
+#### 注意事项
+
+- `src/pages`如果 pages 在根目录下存在，它将被忽略
+- 像 next.config.js 和 tsconfig.json 文件都应该放到根目录下，迁移它们到 src 目录不会工作。public 目录也是如此。
+
+### 多空间(zone)
+
+一个空间是一个 Next.js 应用的部署。你应该有多个空间并合并它们成单个应用。
+
+例如，假如你有以下应用程序：
+
+- 用于`/blog/**`的应用
+- 另一个用于提供所有其他页面的应用
+
+使用多空间的支持，你可以合并两个应用成单个，允许你的用户在同一个 URL 上浏览它们，但是你可以独立开发和部署它们。
+
+#### 如何定义一个空间(zone)
+
+没有特殊的 zone api，你只需要遵守下面的条件：
+
+- 确保仅将你应用需要的页面保留，意味着你不需要其他应用的页面，例如 应用 A 有`/blog`，应用 B 不会有
+- 确保添加 assetPrefix 来避免静态资源的冲突
+
+#### 如何合并多个 zone
+
+你可以使用 HTTP 代理合并多个 zones
+
+对于 Vercel，你可以使用一个 now.json 来部署多个应用。它允许你定义多个应用的路由：
+
+```js
+{
+  "version": 2,
+  "builds": [
+    { "src": "blog/package.json", "use": "@now/next" },
+    { "src": "home/package.json", "use": "@now/next" }
+  ],
+  "routes": [
+    { "src": "/blog/_next(.*)", "dest": "blog/_next$1" },
+    { "src": "/blog(.*)", "dest": "blog/blog$1" },
+    { "src": "(.*)", "dest": "home$1" }
+  ]
+}
+```
+
+你可以使用上面的路由集合来配置代理服务的路由，比如 部署博客应用到 `https://blog.example.com`，然后首页应用部署到`https://home.example.com`。最后将两个应用添加到代理服务`https://example.com`
 
 ## 升级指南
 
