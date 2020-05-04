@@ -17,7 +17,7 @@ categories:
 
 ## 介绍
 
-如果你是新人，建议你学习改[课程](https://nextjs.org/learn/basics/getting-started)
+如果你是新人，建议你学习该[课程](https://nextjs.org/learn/basics/getting-started)
 带有测试的交互课程会指导你完成使用 Next.js 所需要的知识
 如果你有任何有关 Next.js 的问题，你可以去[社区](https://github.com/zeit/next.js/discussions)中提问
 **系统要求**
