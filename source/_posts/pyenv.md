@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-03-30 10:31:11
 password:
 summary:
-tags: [python, 翻译, 未完待续]
+tags: [python, 翻译, 进行中]
 categories:
 ---
 

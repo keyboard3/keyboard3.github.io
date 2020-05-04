@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-04-12 14:26:36
 password:
 summary:
-tags: [webpack, configuration, externals]
+tags: [webpack, configuration, externals, 翻译, 进行中]
 categories:
 ---
 
@@ -37,8 +37,8 @@ categories:
 module.exports = {
   //...
   externals: {
-    jquery: "jQuery"
-  }
+    jquery: "jQuery",
+  },
 };
 ```
 

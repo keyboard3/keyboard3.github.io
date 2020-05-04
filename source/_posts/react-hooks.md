@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-04-09 01:12:43
 password:
 summary:
-tags: [react, docs, 进行中]
+tags: [react, docs, 翻译, 进行中]
 categories:
 ---
 
@@ -359,7 +359,7 @@ class Example extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      count: 0
+      count: 0,
     };
   }
 
@@ -386,7 +386,7 @@ class Example extends React.Component {
 复习一下，在 React 的函数组件像这样：
 
 ```jsx
-const Example = props => {
+const Example = (props) => {
   // You can use Hooks here!
   return <div />;
 };
@@ -1259,7 +1259,7 @@ function FriendListItem(props) {
 const friendList = [
   { id: 1, name: "Phoebe" },
   { id: 2, name: "Rachel" },
-  { id: 3, name: "Ross" }
+  { id: 3, name: "Ross" },
 ];
 
 function ChatRecipientPicker() {
@@ -1271,9 +1271,9 @@ function ChatRecipientPicker() {
       <Circle color={isRecipientOnline ? "green" : "red"} />
       <select
         value={recipientID}
-        onChange={e => setRecipientID(Number(e.target.value))}
+        onChange={(e) => setRecipientID(Number(e.target.value))}
       >
-        {friendList.map(friend => (
+        {friendList.map((friend) => (
           <option key={friend.id} value={friend.id}>
             {friend.name}
           </option>
@@ -1309,8 +1309,8 @@ function todosReducer(state, action) {
         ...state,
         {
           text: action.text,
-          completed: false
-        }
+          completed: false,
+        },
       ];
     // ... other actions ...
     default:
@@ -1389,8 +1389,8 @@ function Counter({ initialCount }) {
     <>
       Count: {count}
       <button onClick={() => setCount(initialCount)}>Reset</button>
-      <button onClick={() => setCount(prevCount => prevCount - 1)}>-</button>
-      <button onClick={() => setCount(prevCount => prevCount + 1)}>+</button>
+      <button onClick={() => setCount((prevCount) => prevCount - 1)}>-</button>
+      <button onClick={() => setCount((prevCount) => prevCount + 1)}>+</button>
     </>
   );
 }
@@ -1404,7 +1404,7 @@ function Counter({ initialCount }) {
 > 不像在类组件中的 setState 方法，useSate 不会自动合并对象。你可以通过用对象展开语法的更新函数来复制这个行为。
 
 ```jsx
-setState(prevState => {
+setState((prevState) => {
   // Object.assign would also work
   return { ...prevState, ...updatedValues };
 });

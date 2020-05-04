@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-04-11 23:15:04
 password:
 summary:
-tags: [js, animate, library, 翻译]
+tags: [js, animate, library, 翻译, 完结]
 categories:
 ---
 
@@ -42,21 +42,21 @@ const wheel = new Wheel({
   data: [
     {
       text: "apple",
-      chance: 20
+      chance: 20,
     },
     {
-      text: "banana"
+      text: "banana",
     },
     {
-      text: "orange"
+      text: "orange",
     },
     {
-      text: "peach"
-    }
+      text: "peach",
+    },
   ],
   onSuccess(data) {
     console.log(data.text);
-  }
+  },
 });
 ```
 
@@ -72,7 +72,7 @@ const wheel = new Wheel({
   const wheel = new Wheel({
     el: document.getElementById("wheel"),
     data: ["Beijing", "London", "New York", "Tokyo"],
-    draw: false
+    draw: false,
   });
   setTimeout(() => {
     wheel.draw();
@@ -110,7 +110,7 @@ el 属性定义了在哪个元素上渲染转轮。你应该传递一个 DOM 元
 ```js
 const wheel = new Wheel({
   el: document.getElementById("wheel"),
-  data: []
+  data: [],
 });
 ```
 
@@ -123,7 +123,7 @@ const wheel = new Wheel({
 ```js
 const wheel = new Wheel({
   el: document.getElementById("wheel"),
-  data: ["Beijing", "London", "New York", "Tokyo"]
+  data: ["Beijing", "London", "New York", "Tokyo"],
 });
 ```
 
@@ -137,15 +137,15 @@ const wheel = new Wheel({
   data: [
     {
       text: "Beijing",
-      chance: 5
+      chance: 5,
     },
     {
       text: "London",
-      chance: 4
+      chance: 4,
     },
     "New York",
-    "Tokyo"
-  ]
+    "Tokyo",
+  ],
 });
 ```
 
@@ -163,7 +163,7 @@ const wheel = new Wheel({
   data: ["prize A", "prize B", "prize C", "prize D"],
   onSuccess(data) {
     alert(`Congratulations! You picked up ${data.text}`);
-  }
+  },
 });
 ```
 
@@ -178,7 +178,7 @@ const wheel = new Wheel({
   limit: 1,
   onFail() {
     alert("You have no more chance to draw");
-  }
+  },
 });
 ```
 
@@ -201,9 +201,9 @@ const wheel = new Wheel({
     anime({
       targets: button.node,
       scale: 1.2,
-      duration: 500
+      duration: 500,
     });
-  }
+  },
 });
 ```
 
@@ -224,15 +224,15 @@ const wheel = new Wheel({
     {
       text: "Beijing",
       color: "silver",
-      fontSize: 24
+      fontSize: 24,
     },
     {
       text: "London",
-      fontColor: "#008000"
+      fontColor: "#008000",
     },
     "New York",
-    "Tokyo"
-  ]
+    "Tokyo",
+  ],
 });
 ```
 
@@ -303,8 +303,8 @@ const wheel = new Wheel({
   theme: "dark",
   color: {
     button: "#fef5e7",
-    buttonFont: "#34495e"
-  }
+    buttonFont: "#34495e",
+  },
 });
 ```
 
@@ -330,8 +330,8 @@ const wheel = new Wheel({
   image: {
     turntable: "turntable.png",
     button: "button.png",
-    offset: -10
-  }
+    offset: -10,
+  },
 });
 ```
 

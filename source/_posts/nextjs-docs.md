@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-03-30 10:47:26
 password:
 summary:
-tags: [next.js, docs, 翻译, 进行中]
+tags: [next.js, docs, 翻译, 完结]
 categories:
 ---
 
@@ -3352,11 +3352,65 @@ export default Page
 
 ### Context Object
 
+getInitialProps 接收单个 context,带有下面属性：
+
+- pathname - 当前路由。是`/pages`页面的路径
+- query - URL 的 query 部分字符串被解析成对象
+- asPath - 展示在浏览器中的真实地址
+- req - HTTP 请求对象（只在服务端）
+- res - HTTP 响应对象（只在服务端）
+- err - 在渲染期间的错误对象
+
 ### Caveats
+
+- getInitialProps 无法被使用到子组件中，只能被页面导出
+- 如果你某些模块只在 getInitialProps 服务端使用，保证[正确导入它们](https://arunoda.me/blog/ssr-and-server-only-modules)，否则就会降低 app 下载速度。
 
 ### TypeScript
 
-### Related
+如果你使用 TypeScript,你可以在函数组件中使用 NextPage 类型
+
+```jsx
+import { NextPage } from "next";
+
+interface Props {
+  userAgent?: string;
+}
+
+const Page: NextPage<Props> = ({ userAgent }) => (
+  <main>Your user agent: {userAgent}</main>
+);
+
+Page.getInitialProps = async ({ req }) => {
+  const userAgent = req ? req.headers["user-agent"] : navigator.userAgent;
+  return { userAgent };
+};
+
+export default Page;
+```
+
+对于 React.Component，你可以使用 NextPageContext：
+
+```jsx
+import React from "react";
+import { NextPageContext } from "next";
+
+interface Props {
+  userAgent?: string;
+}
+
+export default class Page extends React.Component<Props> {
+  static async getInitialProps({ req }: NextPageContext) {
+    const userAgent = req ? req.headers["user-agent"] : navigator.userAgent;
+    return { userAgent };
+  }
+
+  render() {
+    const { userAgent } = this.props;
+    return <main>Your user agent: {userAgent}</main>;
+  }
+}
+```
 
 ## next.config.js
 
@@ -3501,7 +3555,79 @@ module.exports = {
 
 ### 自定义 webpack 配置
 
+一些常见的功能可以作为插件使用：
+
+- [@zeit/next-sass](https://github.com/zeit/next-plugins/tree/master/packages/next-sass)
+- [@zeit/next-less](https://github.com/zeit/next-plugins/tree/master/packages/next-less)
+- [@zeit/next-stylus](https://github.com/zeit/next-plugins/tree/master/packages/next-stylus)
+- [@zeit/next-preact](https://github.com/zeit/next-plugins/tree/master/packages/next-preact)
+- [@next/mdx](https://github.com/zeit/next.js/tree/canary/packages/next-mdx)
+- [@next/bundle-analyzer](https://github.com/zeit/next.js/tree/canary/packages/next-bundle-analyzer)
+
+为了扩展 webpack 的使用，你可以在 next.config.js 定义一个函数扩展它的 config：
+
+```js
+module.exports = {
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // 注意: 我们在上面提供了 webpack，你不用在 require 它
+    // 对 webpack 配置执行自定义化
+    // 重点: 返回修改过的config
+    config.plugins.push(new webpack.IgnorePlugin(/\/__tests__\//));
+    return config;
+  },
+  webpackDevMiddleware: (config) => {
+    // 对webpack开发中间件配置执行自定义华
+    // 重点: 返回修改过的config
+    return config;
+  },
+};
+```
+
+> 这个 webpack 函数被执行两次，一次在服务端一次在客户端。它云心你通过 isServer 属性区分客户端和服务端的配置
+
+给 webpack 第二个参数是带下面属性的对象：
+
+- buildId:String - 构建内 id，作为内部版本之间的标识
+- dev:Boolean - 指示编译是否将在开发环境中完成
+- isServer:Boolean - 如果是服务端编译是 true，否则就是客户端编译
+- defaultLoaders:Object - 默认加载器由 Next.js 内部提供：
+  - babel:Object - 默认 babel-loader 配置
+
+defaultLoaders.babel 的使用案例：
+
+```js
+// 添加依赖于 babel-loader 的加载器的配置示例
+// 来源于 @next/mdx 插件:
+// https://github.com/zeit/next.js/tree/canary/packages/next-mdx
+module.exports = {
+  webpack: (config, options) => {
+    config.module.rules.push({
+      test: /\.mdx/,
+      use: [
+        options.defaultLoaders.babel,
+        {
+          loader: "@mdx-js/loader",
+          options: pluginOptions.options,
+        },
+      ],
+    });
+
+    return config;
+  },
+};
+```
+
 ### 压缩
+
+Next.js 提供 gzip 压缩来压缩渲染内容和静态文件。压缩只在服务端工作。通常需要在 HTTP 代理上启用压缩(如 nginx)，减轻 Node.js 进程的负载。
+
+为了禁止压缩，打开 next.config.js 来禁止 compress 配置：
+
+```js
+module.exports = {
+  compress: false,
+};
+```
 
 ### 静态优化指示器
 
@@ -3571,7 +3697,25 @@ export default MyImage;
 
 ### 禁止 x-powered-by
 
+默认 Next.js 将添加 x-powered-by 到请求头。为了跳过它，可以在 next.config.js 中禁止 poweredByHeader 配置
+
+```js
+module.exports = {
+  poweredByHeader: false,
+};
+```
+
 ### 禁止 ETag 生成
+
+Next.js 为每个页面默认生成[etas](https://en.wikipedia.org/wiki/HTTP_ETag)。你想要禁止给 HTML 页面生产 etag，具体取决于你的缓存策略。
+
+打开 next.config.js 并禁止 generateEtags 选项：
+
+```js
+module.exports = {
+  generateEtags: false,
+};
+```
 
 ### 设置自定义构建目录
 
@@ -3606,9 +3750,116 @@ module.exports = {
 
 ### 配置 onDemandEntries
 
+Next.js 暴露了一些选项让你可以在开发中控制服务如何处理或者保持构建的页面内在内存中。
+
+为了修改默认配置，打开 next.config.js 并添加 onDemandEntries 配置。
+
+```js
+module.exports = {
+  onDemandEntries: {
+    // 服务器保存页面在缓存中的周期(ms)
+    maxInactiveAge: 25 * 1000,
+    // 同时保存，不丢弃的页面数量
+    pagesBufferLength: 2,
+  },
+};
+```
+
 ### 忽略 TypeScript 错误
 
+Next.js 默认报告 TypeScript 错误。如果你不想利用这个行为，可以选择其他方式，就像你编辑器集成一样，你可能想要禁止它。
+
+打开 next.config.js 在 typescript 配置下启用 ignoreDevErrors 选项：
+
+```js
+module.exports = {
+  typescript: {
+    ignoreDevErrors: true,
+  },
+};
+```
+
+当项目中仍存在 TypeScript 错误时，Next.js 生成构建仍旧会失败(next build)。
+
+---
+
+如果你希望在应用有错误的情况下，Next.js 仍危险的运行生产代码，你可以禁止构建错误报告。
+
+> 确保在你构建和部署过程运行了类型检查，否则会非常危险。
+
+打开 next.config.js 并在 typescript 配置中启用 ignoreBuildErrors:
+
+```js
+module.exports = {
+  typescript: {
+    // !! WARN !!
+    // 如果你项目有类型错误，让产品构建成功非常危险
+    // 很少需要用到这个选项，暴露此选项用于高级配置。
+    // 你可能要寻找`ignoreDevErrors` 代替
+    // !! WARN !!
+    ignoreBuildErrors: true,
+  },
+};
+```
+
 ### exportPathMap
+
+> 这个功能只为 next export 服务。如果想了解更多看[静态 HTML 导出](https://nextjs.org/docs/advanced-features/static-html-export)
+
+开始例子，为带有下面页面的应用创建自定义的 exportPathMap：
+
+- `pages/index.js`
+- `pages/about.js`
+- `pages/post.js`
+
+打开 next.config.js 并添加下面的 exportPathMap 配置：
+
+```
+module.exports = {
+  exportPathMap: async function(
+    defaultPathMap,
+    { dev, dir, outDir, distDir, buildId }
+  ) {
+    return {
+      '/': { page: '/' },
+      '/about': { page: '/about' },
+      '/p/hello-nextjs': { page: '/post', query: { title: 'hello-nextjs' } },
+      '/p/learn-nextjs': { page: '/post', query: { title: 'learn-nextjs' } },
+      '/p/deploy-nextjs': { page: '/post', query: { title: 'deploy-nextjs' } },
+    }
+  },
+}
+
+```
+
+这些页面将会导出成 HTML 文件，例如，`/about`将变成`/about.html`。
+
+exportPathMap 是一个接收两个参数的异步函数： 第一个是 defaultPathMap，Next.js 的默认 map。第二个参数对象带有下面属性：
+
+- dev - 当 exportPathMap 被开发时调用为 true.当运行 next export 是 false。开发时，exportPathMap 被用来定义路由。
+- dir -项目目录的绝对路径
+- outDir - out 目录(由-o 配置)的绝对路径。dang dev 是 true，outDir 将是 null
+- distDir - `.next/`目录的绝对路径（由[distDir](https://nextjs.org/docs/api-reference/next.config.js/setting-a-custom-build-directory)配置）
+- buildId - 生成的内部版本号
+
+返回的对象是页面 map，key 是 pathname 并且 value 是接收下面字段的对象
+
+- page: String - 在 pages 目录下的页面
+- query: Object - query 对象是当预渲染时传递给 getInitialProps，默认是 {}
+
+> 导出的 pathname 也可以是文件名(比如, `/readme.md`)，但是如果它的内容与.html 不同，你需要响应内容时将头 Content-Type 设置成 `text/html`.
+
+#### 添加结尾斜杠
+
+可以配置 Next.js 导出页面成 index.html 文件，并要求结尾加/。比如 `/about` 变成 `/about/index.html`，并且可以通过`/about/`路由。这是 Next.js 9 之前的默认行为
+
+回退添加结尾/，打开 next.config.js 并启用 exportTrailingSlash 配置：
+
+```js
+module.exports = {
+  exportTrailingSlash: true,
+};
+```
 
 ### 错误
 

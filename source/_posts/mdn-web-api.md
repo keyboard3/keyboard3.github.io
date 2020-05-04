@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-04-11 16:49:15
 password:
 summary:
-tags: [mdn, web, api]
+tags: [mdn, web, api, 翻译, 进行中]
 categories:
 ---
 
@@ -100,7 +100,7 @@ if (typeof document.addEventListener === "undefined" || hidden === undefined) {
   // This shows the paused
   videoElement.addEventListener(
     "pause",
-    function() {
+    function () {
       document.title = "Paused";
     },
     false
@@ -109,7 +109,7 @@ if (typeof document.addEventListener === "undefined" || hidden === undefined) {
   // When the video plays, set the title.
   videoElemnt.addEventListener(
     "play",
-    function() {
+    function () {
       document.title = "Playing";
     },
     false
