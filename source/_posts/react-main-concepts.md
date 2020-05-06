@@ -1486,6 +1486,284 @@ function NumberList(props) {
 
 ## 表单
 
+> HTML 表单元素和 React 的其他 DOM 元素工作方式有点不一样，因为表单元素原生保持一些内部状态。举例，这个表单在纯 HTML 中接收单个 name：
+
+```jsx
+<form>
+  <label>
+    Name:
+    <input type="text" name="name" />
+  </label>
+  <input type="submit" value="Submit" />
+</form>
+```
+
+当用户提交表单，这个表单有默认 HTML 表单的行为，即浏览到新页面。如果你想要在 React 使用这个行为，这就可以了。但是大多数情况下，更方便的是用 JavaScript 函数来处理表单提交，可以访问用户输入这个表单的数据。标准实现这个的技术叫做“受控组件”。
+
+### 受控组件
+
+在 HTML 中，表单元素像`<input>`, `<textarea>`, and `<select>`通常维护自己的状态并且根据用户输入来更新它。在 react 中，易变的状态通常保存在组件的 state 中，只被 setState()更新。
+
+我们可以通过将 React 状态变成“单一事实真像”来合并他们俩。然后 React 渲染的表单控制后续用户输入发生的事情。输入表单元素的值受 由 React 这样方式的受控组件控制。
+
+举例，如果我们想让上一个列子在提交时打印 name，我们可以将表单写成受控组件：
+
+```jsx
+class NameForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { value: "" };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({ value: event.target.value });
+  }
+
+  handleSubmit(event) {
+    alert("A name was submitted: " + this.state.value);
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <label>
+          Name:
+          <input
+            type="text"
+            value={this.state.value}
+            onChange={this.handleChange}
+          />
+        </label>
+        <input type="submit" value="Submit" />
+      </form>
+    );
+  }
+}
+```
+
+因为 value 属性是在我们表单元素上设置的，显示的 value 一直是 this.state.value，使得 React 状态称为了真像的来源。因为每次按键运行 handleChange 来更新 React 状态，显示的 value 由用户输入来更新。
+
+使用受控组件，输入的 value 一直由 React 状态驱动。虽然这意味着你必须输入更多的代码，但是现在你也可以传递值给其他 UI 元素，或者从其他事件处理器中重置它。
+
+### textarea 标签
+
+在 HTML 中，`<textarea>`元素由它的 children 来定义 text：
+
+```jsx
+<textarea>Hello there, this is some text in a text area</textarea>
+```
+
+在 React 中，`<textarea>`使用 value 属性来替换它。这种方式，使用`<textarea>`的表单可以与使用单行 input 的表单一样。
+
+```jsx
+class EssayForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: "Please write an essay about your favorite DOM element.",
+    };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({ value: event.target.value });
+  }
+
+  handleSubmit(event) {
+    alert("An essay was submitted: " + this.state.value);
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <label>
+          Essay:
+          <textarea value={this.state.value} onChange={this.handleChange} />
+        </label>
+        <input type="submit" value="Submit" />
+      </form>
+    );
+  }
+}
+```
+
+注意 this.state.value 在构造函数中初始化，所以文本区域开始带一些文本在其中。
+
+### select 标签
+
+在 HTML 中，`<select>`创建一个下拉的列表。举例，这个 HTML 创建了一个下拉列表的 flavors：
+
+```jsx
+<select>
+  <option value="grapefruit">Grapefruit</option>
+  <option value="lime">Lime</option>
+  <option selected value="coconut">
+    Coconut
+  </option>
+  <option value="mango">Mango</option>
+</select>
+```
+
+注意 Coconut 选项是初始被选中的，因为这个 selected 属性。React 中，用根的 Select 标签的 value 属性来替换选项的 selected 属性。在受控组件中非常方便，因为你只需要在一个地方更新它。举例：
+
+```jsx
+class FlavorForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { value: "coconut" };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({ value: event.target.value });
+  }
+
+  handleSubmit(event) {
+    alert("Your favorite flavor is: " + this.state.value);
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <label>
+          Pick your favorite flavor:
+          <select value={this.state.value} onChange={this.handleChange}>
+            <option value="grapefruit">Grapefruit</option>
+            <option value="lime">Lime</option>
+            <option value="coconut">Coconut</option>
+            <option value="mango">Mango</option>
+          </select>
+        </label>
+        <input type="submit" value="Submit" />
+      </form>
+    );
+  }
+}
+```
+
+总的来说，这使得`<input type="text">`, `<textarea>`, and `<select>`所有工作都非常相似 - 它们都接收一个 value 属性，你可以它来实现一个受控组件。
+
+> 注意：
+> 你可以传递一个数组给 value 属性，允许你在 select 标签中选择多个选项：
+
+```jsx
+<select multiple={true} value={['B', 'C']}>
+```
+
+### 文件输入标签
+
+在 HTML 中，一个`<input type="file">`让用户从它们的设备存储中选择一个或多个文件上传到服务器或者由 JavaScript 通过[File API](https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications)操作
+
+```html
+<input type="file" />
+```
+
+因为它的值是只读的，所以它在 React 中是不受控的组件。稍后在文档中和其他不受控组件一起讨论。
+
+### 处理多个输入
+
+当你需要处理多个受控的 input 元素，你可以给每个元素添加 name 属性，并让处理器函数根据 event.target.name 的值来选择要执行的操作。
+
+```jsx
+class Reservation extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isGoing: true,
+      numberOfGuests: 2,
+    };
+
+    this.handleInputChange = this.handleInputChange.bind(this);
+  }
+
+  handleInputChange(event) {
+    const target = event.target;
+    const value = target.name === "isGoing" ? target.checked : target.value;
+    const name = target.name;
+
+    this.setState({
+      [name]: value,
+    });
+  }
+
+  render() {
+    return (
+      <form>
+        <label>
+          Is going:
+          <input
+            name="isGoing"
+            type="checkbox"
+            checked={this.state.isGoing}
+            onChange={this.handleInputChange}
+          />
+        </label>
+        <br />
+        <label>
+          Number of guests:
+          <input
+            name="numberOfGuests"
+            type="number"
+            value={this.state.numberOfGuests}
+            onChange={this.handleInputChange}
+          />
+        </label>
+      </form>
+    );
+  }
+}
+```
+
+现在我们使用 ES6 的[计算属性 name](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Operators/Object_initializer#Computed_property_names)语法来更新 state key 为给定的输入 name。
+
+```js
+this.setState({
+  [name]: value,
+});
+```
+
+它和 ES5 这段代码等效：
+
+```js
+var partialState = {};
+partialState[name] = value;
+this.setState(partialState);
+```
+
+另外，因为 setState()自动[合并部分 state 到当前 state](https://reactjs.org/docs/state-and-lifecycle.html#state-updates-are-merged)，我们只需要用修改过的部分来调用它。
+
+### 控制输入 Null 值
+
+在受控组件上指定 value 属性值会阻止用户更改这个 input，除非你希望这么做。如果你指定了 value，但是 input 仍然可以被编辑，你可能偶然的设置 value 为 undefined 或者 null。
+
+下面代码演示它。（输入首先被锁定，但经过短暂的延迟后变成可编辑）
+
+```jsx
+ReactDOM.render(<input value="hi" />, mountNode);
+
+setTimeout(function () {
+  ReactDOM.render(<input value={null} />, mountNode);
+}, 1000);
+```
+
+### 受控组件的替代品
+
+使用受控组件有时可能很乏味，因为你可能需要为你每种数据更改方式写一个事件处理器，还需要通过 React 组件来传递所有输入状态。当你将已存在的代码转成 React，或者使用非 React 库集成到 React 应用时它会变得特别烦人。在这些场景下，你可能想看下[非受控组件](https://reactjs.org/docs/uncontrolled-components.html)，这是一种实现 input 表单的另外一种技术。
+
+### 全面解决方案
+
+如果你在查找一个完美的解决方案包括验证，跟踪访问的字段以及处理表单提交，[Formik](https://jaredpalmer.com/formik)是一个不错的选择。然而，它基于受控组件和管理状态相同的原理创建- 所以不要忽略学习它们。
+
 ## 状态提升
 
 ## 组合 vs 继承
