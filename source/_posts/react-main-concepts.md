@@ -1246,17 +1246,243 @@ ReactDOM.render(<Page />, document.getElementById("root"));
 
 ## 列表和 keys
 
+首先让我们回顾一下，如何在 JavaScript 中转换列表。
+
+下面给我们的代码，我们使用 map()函数将 numbers 数组的值转换成 2 倍。我们通过 map()返回一个新数组给 doubled 变量，然后打印它：
+
+```js
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map((number) => number * 2);
+console.log(doubled);
+```
+
+这个代码输出`[2, 4, 6, 8, 10]`到控制台。
+
+在 React 中，将数组转换成元素列表几乎相同。
+
 ### 渲染多个组件
+
+你可以构建元素的集合，然后在 JSX 中用大括号{}包裹它们。
+
+下面，我们使用 JavaScript map()函数循环 numbers 数组。每个 item 返回`<li>`元素。最后我们赋值元素数组结果给 listItems:
+
+```jsx
+const numbers = [1, 2, 3, 4, 5];
+const listItems = numbers.map((number) => <li>{number}</li>);
+```
+
+我们将整个 listItems 数组包含在`<ul>`元素内，然后渲染它到 DOM 中：
+
+```jsx
+ReactDOM.render(<ul>{listItems}</ul>, document.getElementById("root"));
+```
+
+这段代码显示数字到 1-5 的符号列表。
 
 ### 基础的 List 组件
 
+通常你应该在组件中渲染列表。
+
+我们可以重构之前的案例为一个接收 numbers 数组的组件并输出 list 元素。
+
+```jsx
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) => <li>{number}</li>);
+  return <ul>{listItems}</ul>;
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById("root")
+);
+```
+
+当你运行这段代码，系统会警告应该为 list item 提供 key。当创建列表元素时，key 是你需要包括的特殊字符串属性。我们将在下一节讨论为什么它如此重要。
+
+为 numbers.map()中的列表项赋值 key，修复这个缺失 key 的问题。
+
+```jsx
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) => (
+    <li key={number.toString()}>{number}</li>
+  ));
+  return <ul>{listItems}</ul>;
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById("root")
+);
+```
+
 ### Keys
+
+keys 帮助 React 识别哪些 item 发生更改，添加或者删除。应该为数组元素分配 keys，让元素能够稳定的被识别：
+
+```jsx
+const numbers = [1, 2, 3, 4, 5];
+const listItems = numbers.map((number) => (
+  <li key={number.toString()}>{number}</li>
+));
+```
+
+选 key 的最好方式是使用独一无二的字符串识别 list 项和它相邻的项：
+
+```jsx
+const todoItems = todos.map((todo) => <li key={todo.id}>{todo.text}</li>);
+```
+
+你没有使用稳定 id 来渲染 item 时，最后一招，你可以使用 item 的 index 作为 keys：
+
+```jsx
+const todoItems = todos.map((todo, index) => (
+  // 仅当item没有稳定的id时
+  <li key={index}>{todo.text}</li>
+));
+```
+
+如果 items 的顺序可能发生变化，我们不建议使用 index 作为 keys。这可能导致性能的负面影响并且会对组件状态造成问题。查询 Robin Pokorny 的文章[深度解析为什么使用 index 作为 key 会带来负面影响](https://medium.com/@robinpokorny/index-as-a-key-is-an-anti-pattern-e0349aece318)
+
+如果你有兴趣了解更多，这里有一篇[深度解析为什么 keys 是必须的](https://reactjs.org/docs/reconciliation.html#recursing-on-children)
 
 ### 用 key 提取组件
 
-### key 只能在相邻 key 中唯一
+keys 仅在数组周围的上下文中才有效。
+
+举例，如果提取 ListItem 组件，你应该保留 key 在`<ListItem />`数组中而不是 ListItem 组件里的`<li>`元素上。
+
+例子：错误使用 key
+
+```jsx
+function ListItem(props) {
+  const value = props.value;
+  return (
+    // Wrong! 不应该在这里指定key:
+    <li key={value.toString()}>{value}</li>
+  );
+}
+
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) => (
+    // Wrong! key应该在这里指定:
+    <ListItem value={number} />
+  ));
+  return <ul>{listItems}</ul>;
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById("root")
+);
+```
+
+例子：正确使用 key
+
+```jsx
+function ListItem(props) {
+  // Correct! 不需要在这里指定key:
+  return <li>{props.value}</li>;
+}
+
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) => (
+    // Correct! key应该在数组中指定.
+    <ListItem key={number.toString()} value={number} />
+  ));
+  return <ul>{listItems}</ul>;
+}
+
+const numbers = [1, 2, 3, 4, 5];
+ReactDOM.render(
+  <NumberList numbers={numbers} />,
+  document.getElementById("root")
+);
+```
+
+一个好的经验是 map()中的元素都需要 keys。
+
+### key 一定在相邻 key 中唯一
+
+在数组中使用 keys 应该让它们相邻唯一。但是不需要它们在全局唯一。我们可以在不同的数组中使用相同的 keys。
+
+```jsx
+function Blog(props) {
+  const sidebar = (
+    <ul>
+      {props.posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  );
+  const content = props.posts.map((post) => (
+    <div key={post.id}>
+      <h3>{post.title}</h3>
+      <p>{post.content}</p>
+    </div>
+  ));
+  return (
+    <div>
+      {sidebar}
+      <hr />
+      {content}
+    </div>
+  );
+}
+
+const posts = [
+  { id: 1, title: "Hello World", content: "Welcome to learning React!" },
+  { id: 2, title: "Installation", content: "You can install React from npm." },
+];
+ReactDOM.render(<Blog posts={posts} />, document.getElementById("root"));
+```
+
+keys 是给 React 的提示，它们不会传递给你的组件。如果你的组件需要相同的值，使用不同的名字显示的作为 prop 传递它：
+
+```jsx
+const content = posts.map((post) => (
+  <Post key={post.id} id={post.id} title={post.title} />
+));
+```
+
+上面的例子，Post 组件应该读 props.id，而不是 props.key。
 
 ### 在 JSX 中嵌入 map()
+
+在上面的例子中我们独立声明了 listItems 变量，然后把它包含到 JSX 中：
+
+```jsx
+function NumberList(props) {
+  const numbers = props.numbers;
+  const listItems = numbers.map((number) => (
+    <ListItem key={number.toString()} value={number} />
+  ));
+  return <ul>{listItems}</ul>;
+}
+```
+
+JSX 允许[嵌入任何表达式](https://reactjs.org/docs/introducing-jsx.html#embedding-expressions-in-jsx)到大括号中，所以我们应该内联 map()结果：
+
+```jsx
+function NumberList(props) {
+  const numbers = props.numbers;
+  return (
+    <ul>
+      {numbers.map((number) => (
+        <ListItem key={number.toString()} value={number} />
+      ))}
+    </ul>
+  );
+}
+```
+
+有时候这么做会使得代码更清晰，但是这种风格也会被滥用。像在 JavaScript 中，由你决定值得提取变量以提高可读性。记住如果 map()的主体过于嵌套，这应该是提取组件的好时机。
 
 ## 表单
 
