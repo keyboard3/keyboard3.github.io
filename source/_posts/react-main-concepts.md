@@ -2076,11 +2076,133 @@ class Calculator extends React.Component {
 
 ## 组合 vs 继承
 
-### 遏制
+> React 有非常强大的组合模型，我们建议使用组合而不是继承来在组件间复用代码
 
-### 专业化
+这一节，我们将考虑初学者使用继承时遇到些问题，并展示我们如何使用组合来解决它们的。
 
-### 那么是继承呢？
+### 包含关系
+
+一些组件无法提前知道它们的 children。这在 Sidebar（侧边栏）或者 Dialog 等代表盒子的组件中非常常见。
+
+我们建议像这样的组件使用使用指定的 children 属性来传递 children 元素给它们的输出。
+
+```jsx
+function FancyBorder(props) {
+  return (
+    <div className={"FancyBorder FancyBorder-" + props.color}>
+      {props.children}
+    </div>
+  );
+}
+```
+
+让其他组件通过嵌套到 JSX ，可以传任意的 children 给它们。
+
+```jsx
+function WelcomeDialog() {
+  return (
+    <FancyBorder color="blue">
+      <h1 className="Dialog-title">Welcome</h1>
+      <p className="Dialog-message">Thank you for visiting our spacecraft!</p>
+    </FancyBorder>
+  );
+}
+```
+
+任何在`<FancyBorder>`JSX 标签都被认为是 FancyBorder 的 children prop。因为 FancyBorder 在`<div>`中渲染`{props.children}`, 传递的元素最终出现在输出中。
+
+很少有，有时候你需要在组件中要多个洞。这种情况你可以自己想出约定，而不是使用 children。
+
+```jsx
+function SplitPane(props) {
+  return (
+    <div className="SplitPane">
+      <div className="SplitPane-left">{props.left}</div>
+      <div className="SplitPane-right">{props.right}</div>
+    </div>
+  );
+}
+
+function App() {
+  return <SplitPane left={<Contacts />} right={<Chat />} />;
+}
+```
+
+React 元素像 `<Contacts />`和`<Chat />`只是对象，所以你可以跟其他数据一样作为 props 传递。这种方法可能让你想到了其他库中的槽，但是 React 没有这样的限制，你可以将任何东西作为 props 属性传递。
+
+### 特列关系
+
+有时候我们认为相关的组件是其他组件的特列。我们可能认为 WelcomeDialog 是 Dialog 的特列。
+
+在 React 中，它可能被组合实现，特殊组件渲染通用组件并使用 props 配置它。
+
+```jsx
+function Dialog(props) {
+  return (
+    <FancyBorder color="blue">
+      <h1 className="Dialog-title">{props.title}</h1>
+      <p className="Dialog-message">{props.message}</p>
+    </FancyBorder>
+  );
+}
+
+function WelcomeDialog() {
+  return (
+    <Dialog title="Welcome" message="Thank you for visiting our spacecraft!" />
+  );
+}
+```
+
+组合也适用于 classes 定义的组件：
+
+```jsx
+function Dialog(props) {
+  return (
+    <FancyBorder color="blue">
+      <h1 className="Dialog-title">{props.title}</h1>
+      <p className="Dialog-message">{props.message}</p>
+      {props.children}
+    </FancyBorder>
+  );
+}
+
+class SignUpDialog extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSignUp = this.handleSignUp.bind(this);
+    this.state = { login: "" };
+  }
+
+  render() {
+    return (
+      <Dialog
+        title="Mars Exploration Program"
+        message="How should we refer to you?"
+      >
+        <input value={this.state.login} onChange={this.handleChange} />
+        <button onClick={this.handleSignUp}>Sign Me Up!</button>
+      </Dialog>
+    );
+  }
+
+  handleChange(e) {
+    this.setState({ login: e.target.value });
+  }
+
+  handleSignUp() {
+    alert(`Welcome aboard, ${this.state.login}!`);
+  }
+}
+```
+
+### 那么继承呢？
+
+在 Facebook,我们使用上千个组件，我们没有找到任何案例使用继承来创建层级结构。
+
+Props 和组合让你清晰和安全方式灵活的自定义组件 UI 和行为。记住组件可能接受任意的 props，包括基础类型，React 元素或者函数。
+
+如果你想要在组件之间复用非 UI 功能，我们建议提取它到独立的 JavaScript 模块中。组件不用继承，可以导入它使用函数，对象或者 class。
 
 ## React 思考
 
