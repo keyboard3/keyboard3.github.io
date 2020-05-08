@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-04-09 14:00:27
 password:
 summary:
-tags: [react, 翻译, 进行中]
+tags: [react, 翻译, 完结]
 categories:
 ---
 
@@ -2204,12 +2204,144 @@ Props 和组合让你清晰和安全方式灵活的自定义组件 UI 和行为�
 
 如果你想要在组件之间复用非 UI 功能，我们建议提取它到独立的 JavaScript 模块中。组件不用继承，可以导入它使用函数，对象或者 class。
 
-## React 思考
+## React 哲学
 
-### 从模拟开始
+> 我们认为 React 是使用 JavaScript 构建大型快速应用的首选方式。它在 Facebook 和 Instagram 上表现的很好。
 
-### 步骤 1：将 UI 拆分到组件树中
+React 重要方面之一是让你在构建应用时候思考应用程序。在这篇文档中，我们将引导你完成在 React 中构建一个可搜索的产品数据表格的思考过程。
+
+### 从设计稿开始
+
+想象我们已经有了 JSON API 和设计师的设计稿。设计稿如下：
+![设计稿](https://reactjs.org/static/1071fbcc9eed01fddc115b41e193ec11/d4770/thinking-in-react-mock.png)
+我们 JSON API 返回的数据格式如下：
+
+```json
+[
+  {category: "Sporting Goods", price: "$49.99", stocked: true, name: "Football"},
+  {category: "Sporting Goods", price: "$9.99", stocked: true, name: "Baseball"},
+  {category: "Sporting Goods", price: "$29.99", stocked: false, name: "Basketball"},
+  {category: "Electronics", price: "$99.99", stocked: true, name: "iPod Touch"},
+  {category: "Electronics", price: "$399.99", stocked: false, name: "iPhone 5"},
+  {category: "Electronics", price: "$199.99", stocked: true, name: "Nexus 7"}
+];
+```
+
+### 步骤 1：将 UI 拆分为组件层次结构
+
+首先在设计稿中你将需要给每个组件（和子组件）画一个方框，并给它们名字。如果你和设计师一起工作，他们可能已经做过这样的工作了，所以跟他们进行交流！他们的 Photoshop 图层名字最终可以作为你 React 组件的名字。
+
+但是你知道哪些应该在一个组件？使用决定创建新方法和对象相同的技术。其中一种技术是[单一职责](https://en.wikipedia.org/wiki/Single_responsibility_principle)，它就是一个组件应该只做一件事。随着组件增长，它应该被分解到更小的组件中。
+
+因为你需要经常显示 JSON 数据模型给用户，你会发现如果你的模型构建的恰当，你的 UI （组件的的层次结构）将一一对应。因为 UI 和数据模型都倾向于相同的信息结构。分离你的 UI 到组件，每个组件都会对应数据模型的一部分。
+![modal-ui map](https://reactjs.org/static/eb8bda25806a89ebdc838813bdfa3601/6b2ea/thinking-in-react-components.png)
+你看到这，在我们的应用中有 5 个组件。已经将代表每个组件的数据斜体表示了。
+
+1. **FilterableProductTable(orange):** 包含整个案例
+2. **archBar (blue):** 接收所有用户输入
+3. **ProductTable (green):** 根据用户的输入显示和过滤数据集合
+4. **ProductCategoryRow (turquoise):** 显示么个目录的头
+5. **ProductRow (red):** 每行显示一个产品
+
+如果你查看 ProductTable，你讲会看到 table 头（包含 Name 和 Prize 的标签）不是我们自己的组件。这是偏好的问题，选择哪种方式一直有一个争论。在这个示例中，保密保留它作为 ProductTable 的一部分，因为它是数据渲染集合的一部分，这是 ProductTable 的责任。然而，如果头变得很复杂（比如，如果我们向添加用于分类的排序），创建我们自己的 ProductTableHeader 组件会更有意义。
+
+现在我们确定了在设计稿中的组件，让我们拿牌它们到层次结构中。在设计稿中组件在另外的组件中，在层次结构中应该作为 child 显示。
+
+- FilterableProductTable
+  - SearchBar
+  - ProductTable
+    - ProductCategoryRow
+    - ProductRow
 
 ### 步骤 2：在 React 中构建一个静态的版本
 
-### 步骤 3：
+现在你有了组件的层次结构，是时候实现自己的应用。最简单的方式是构建一个版本将你的数据模型渲染成 UI，但没有交互。最好应该将这些处理过程分开，因为构建静态版本要求大量的打字而无需思考，而添加交互性要求大量思考而不是大量的打字。我们将了解原因。
+
+要构建呈现数据模型的应用的静态版本，你需要构建可以复用其他组件的组件并使用 props 作为数据传递。props 是从父对象给子对象传递数据的一种方式。如果你熟悉 state 概念，根本不需要使用 state 来创建静态版本。State 只在交互的时候用，它是随着时间发生变化的数据。因为这是应用的静态版本，所以你不需要使用它。
+
+你可以自顶向下或者自底向上的构建。也就是说，你可以从层次机构中较高的组件开始构建（比如，从 FilterableProductTable 开始），也可以从层次结构较低的组件开始构建（ProductRow）。在简单的示例中，通常自顶向下更简单。对于大型项目，自底向上构建写单元测试容易。
+
+在这一步的最后，你讲拥有一个用于呈现数据模型的可复用的组件库。因为这是你应用的静态版本所以这些组件只有 render 方法。层次结构顶层的组件（FilterableProductTable）将用的数据模型作为 prop。如果更改了基础数据模型，可以再调用一次`ReactDOM.render()`，UI 将会更新。你可以看到 UI 的更新方式以及在哪里可以修改它们。React 单向数据流（也叫做单向绑定）让一切都模块化和快速。
+
+如果你需要执行这个步骤的帮助，可以参考[React 文档](https://reactjs.org/docs/)
+
+一个简单的插曲：Props 对比 State
+React 中有两种类型的数据"model"：props 和 state。理解它们两者的区别很重要；如果不熟悉它们之间的不同可以去浏览官方 React 文档。或者看常见问题汇总（FAQ）：state 和 props 之间有什么区别？
+
+### 步骤 3：确定 UI 状态的最小表现（但完整）
+
+为了使你的 UI 具有可交互性，你需要能够触发对基础数据模型的更改。React 使用 state 来实现。
+
+为了正确的构建应用，你需要思考你应用需要的最小可变状态集。这里的关键是 DRY：不要重复自己。找出你应用所需的状态的绝对最小表现，根据需要计算任何事情。举例，如果你构建 TODO 列表，保存 TODO items 数组；不要保存一个独立的 count 状态变量。而应该当想要渲染 TODO 的 count 时，获取 TODO items 数组的长度。
+
+考虑我们示例应用中的所有数据。我们有：
+
+- 产品的原始列表
+- 用户输入的搜索文字
+- 复选框的值
+- 筛选的产品列表
+
+让我们研究每一个，看是否是状态。对所有数据询问 3 个问题：
+
+- 它是父对象通过 props 传递进来的嘛？如果是，它可能不是 state。
+- 它随着时间推移不变嘛？如果是，它应该不是 strate。
+- 你可以根据你组件中的其他任何的 state 或者 props 计算得到它吗？如果是，它不是 state
+
+产品的原始列表作为 props 传递，所以它不是 state。搜索文本和复选框应该是 state，因为它们随着时间推移更改并且无法通过其他任何东西计算得到。最后，过滤的产品列表也不是 state，因为它可以被产品的原始列表和搜索文本以及复选框的值组合在一起计算得到。Think of all of the pieces of data in our example application. We have:
+
+The original list of products
+The search text the user has entered
+The value of the checkbox
+The filtered list of products
+Let’s go through each one and figure out which one is state. Ask three questions about each piece of data:
+
+Is it passed in from a parent via props? If so, it probably isn’t state.
+Does it remain unchanged over time? If so, it probably isn’t state.
+Can you compute it based on any other state or props in your component? If so, it isn’t state.
+The original list of products is passed in as props, so that’s not state. The search text and the checkbox seem to be state since they change over time and can’t be computed from anything. And finally, the filtered list of products isn’t state because it can be computed by combining the original list of products with the search text and value of the checkbox.
+
+So finally, our state is:
+
+The search text the user has entered
+The value of the checkbox
+
+所以，最后，我们的 state 是：
+用户已经输入的搜索文本
+复选框的值
+
+### 步骤 4：确定你的状态应该放在那里
+
+好的，我们可以确定应用最小 state 集。下面，我们需要确定那些组件改变，或者拥有改状态
+
+记住：React 是单向数据流的组件层次结构。它可能无法立刻清除那个组件应该拥有什么状态。**它通常是新人最难理解的部分**。所以请按照下面的步骤来弄清楚。
+
+对于你应用的每个状态：
+
+- 根据每个组件的状态来确定显示的内容
+- 找到公共所有者组件（在层次结构中所有需要状态的组件之上的单个组件）
+- 公共所有者或者其他在层次结构中更高级别的组件应该拥有它的状态
+- 如果你无法找到拥有状态意义的组件，创建一个仅用于保留状态的新组件，然后放在公共的所有者组件之上。
+
+让我们在应用中运行这个策略：
+
+- ProductTable 需要根据 state 和搜索文本以及复选框状态来过滤产品列表。
+- 公共的所有者组件是 FilterableProductTable。
+- 从概念上将过滤文本和复选框值放到 FilterableProductTable 有意义。
+
+所以，我们决定将我们的状态放到 FilterableProductTable 中，首先，添加实例属性`this.state = {filterText: '', inStockOnly: false}`到 FilterableProductTable’s 的构造函数中反映应用的初始状态。然后传递属性 filterText 和 inStockOnly 到 ProductTable 以及 SearchBar 中。最后使用这些属性在 ProductTable 中过滤这些行，然后在 SearchBar 中设置表单字段的值。
+
+你可以看到你应用将有下面的行为：设置 filterText 到”ball“然后刷新你的应用。你讲看到这个数据 table 被正确的更新。
+
+### 步骤 5：添加逆向数据流
+
+至此，我们已经创建一个根据 props 和 state 顺着层次结构正确的呈现的应用。现在是时候支持另外一种数据流：在深层次结构中的表单组件需要更新 FilterableProductTable 的状态。
+
+React 使得数据流清晰帮助你理解你的程序是如何工作的，但是要求比传统的数据流双向绑定要输入更多的代码。
+
+如果你尝试输入或者选中的例子当前版本的复选框，你讲看到 React 会忽略你的输入。这是故意的，因为我们将 input 的输入 prop 设置成 FilterableProductTable 的 state。
+
+让我们考虑下我们要发生的事情。我们想要保证当用户更改表单时，我们更新 state 来反映用户输入。因为组件应该只更新它们自己的 state，FilterableProductTable 将传递回调给 SearchBar，当它触发时状态就会更新。我们可以在输入组件中使用 onChange 事件来通知它。回调函数由 FilterableProductTable 传入，将调用 setState(),并且应用将会被更新。
+
+### 结尾
+
+希望让你了解如何使用 React 来构建组件和应用，尽管让你比之前使用过的输入更多代码，记住代码的读取远要比写多，并且阅读这个模块清晰代码也不困难。当你开始构建大型的组件库时，你将感谢这种显示性和模块性，并且随着代码复用，你代码行数将开始减少。
