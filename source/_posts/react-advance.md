@@ -17,6 +17,203 @@ categories:
 
 ### 代码分割
 
+#### 打包
+
+大多数 React 应用使用 [Webpack](https://webpack.js.org/),[Rollup](https://rollupjs.org/)或者[Browserify](http://browserify.org/)工具来打包它们的文件。打包是跟踪导入文件并将它们合并到单个文件的过程：最后得到一个 bundle 文件。这个 bundle 文件可以放到页面上一次性加载整个应用。
+
+#### Example
+
+##### App:
+
+```jsx
+// app.js
+import { add } from "./math.js";
+
+console.log(add(16, 26)); // 42
+```
+
+```jsx
+// math.js
+export function add(a, b) {
+  return a + b;
+}
+```
+
+> 注意：
+> 你的打包文件最后可能跟上面有点不一样。
+
+如果你使用[Create React App](https://github.com/facebookincubator/create-react-app), [Next.js](https://github.com/zeit/next.js/), [Gatsby](https://www.gatsbyjs.org/),或者类似的工具，你将有一个 Webpack 配置开箱即用的打包你的应用。
+
+如果你不是使用这些工具，你需要自己设置打包配置。举例，在 webpack 文档上看[安装](https://webpack.js.org/guides/installation/)和[入门指南](https://webpack.js.org/guides/getting-started/)。
+
+#### 代码分割
+
+打包是一个非常棒的技术，但随着你应用的增长，你打包的文件会增长的越大。尤其是你包含了非常大的第三方库时。你需要密切关注你打包的代码，以免意外使其过大导致你的应用需要花费很长时间区加载。
+
+为了避免结成大包，前期应该思考问题并开始”分解“你的打包文件。代码分割是由像 Webpack，Rollup 以及 Browserify（factor-bundle）这样打包器支持的技术，能够创建多个包以便在运行时动态加载。
+
+代码分割你应用可以帮助你懒加载用户当前需要的内容，它可以显著的提高你应用的性能。虽然并没有减少你应用的总代码行数，你可以避免加载到用户不需要的代码，减少在初始化加载时需要的代码。
+
+#### import()
+
+将代码分割引入到你应用的最好的方法是通过动态 import() 语法。
+**Before**
+
+```jsx
+import { add } from "./math";
+
+console.log(add(16, 26));
+```
+
+**After**
+
+```jsx
+import("./math").then((math) => {
+  console.log(math.add(16, 26));
+});
+```
+
+当 Webpack 遇到这个语法，它自动开始代码分割你的应用。如果你使用 Create React App，它已经为你配置好，你可以立刻[使用它](https://facebook.github.io/create-react-app/docs/code-splitting)。Next.js 同样也开箱即用的支持。
+
+如果你自己设置 Webpack，你可能需要阅读 Webpack 的[代码分割指南](https://webpack.js.org/guides/code-splitting/)。你的 webpack 配置应该[像这样](https://gist.github.com/gaearon/ca6e803f5c604d37468b0091d9959269)。
+
+当你使用[Babel](https://babeljs.io/)，你将需要保证 Babel 能够解析动态导入语法而不能够转化它。你需要[babel-plugin-syntax-dynamic-import](https://yarnpkg.com/en/package/babel-plugin-syntax-dynamic-import)来做到。
+
+#### React.lazy
+
+> 注意：
+> React.lazy 和 Suspense 尚不能用于服务端渲染。如果你想要在服务端渲染应用中进行代码分割。我们建议使用 Loadable 组件。它提供了用于打包和服务端渲染拆分的非常好的指南。
+
+React.lazy 函数可以让你将动态导入作为一个常规的组件。
+**Before**
+
+```jsx
+import OtherComponent from "./OtherComponent";
+```
+
+**After**
+
+```jsx
+const OtherComponent = React.lazy(() => import("./OtherComponent"));
+```
+
+当这个组件被第一次渲染时它将自动加载包含 OtherComponent 组件的包。
+
+React.lazy 接受一个必定调用动态 import()方法的函数。它一定会返回一个 Promise，这个 Promise 解析带有默认导出 React 组件的模块。
+
+这个懒加载组件应该渲染在 Suspense 组件中，它允许我们去显示后备内容（比如加载中指示器）当我们等待懒加载组件去加载时。
+
+```jsx
+import React, { Suspense } from "react";
+
+const OtherComponent = React.lazy(() => import("./OtherComponent"));
+
+function MyComponent() {
+  return (
+    <div>
+      <Suspense fallback={<div>Loading...</div>}>
+        <OtherComponent />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+这个 fallback 属性接受任何你想在加载时显示的组件。你可以将 Suspense 组件放到懒加载组件之上的任何位置。你甚至可以用一个 Suspense 组件包装多个懒加载组件。
+
+```jsx
+import React, { Suspense } from "react";
+
+const OtherComponent = React.lazy(() => import("./OtherComponent"));
+const AnotherComponent = React.lazy(() => import("./AnotherComponent"));
+
+function MyComponent() {
+  return (
+    <div>
+      <Suspense fallback={<div>Loading...</div>}>
+        <section>
+          <OtherComponent />
+          <AnotherComponent />
+        </section>
+      </Suspense>
+    </div>
+  );
+}
+```
+
+#### 异常捕获边界
+
+如果这个 other 模块加载失败（举例，由于网络失败），它将处罚一个异常。你可以处理这些错误去显示一个比较友好的用户体验并且使用[异常捕获边界](https://reactjs.org/docs/error-boundaries.html)来恢复。一旦你创建了你的错误异常边界，你可以在你懒加载组件之上任何地方显示错误状态，当发生网络异常时。
+
+```jsx
+import React, { Suspense } from "react";
+import MyErrorBoundary from "./MyErrorBoundary";
+
+const OtherComponent = React.lazy(() => import("./OtherComponent"));
+const AnotherComponent = React.lazy(() => import("./AnotherComponent"));
+
+const MyComponent = () => (
+  <div>
+    <MyErrorBoundary>
+      <Suspense fallback={<div>Loading...</div>}>
+        <section>
+          <OtherComponent />
+          <AnotherComponent />
+        </section>
+      </Suspense>
+    </MyErrorBoundary>
+  </div>
+);
+```
+
+#### 基于路由的代码分割
+
+决定应用中哪里引入代码分割可能比较棘手。你想要确保你选择的位置以均匀的分割包，但是不会破坏用户体验。
+
+一个分割推荐的位置是根据路由。网络上大多数人习惯于页面过度需要花一些时间加载，你还倾向于重新渲染整个应用，因此你的用户可能无法同时跟页面上的其他元素交互了。
+
+这里有一个实例使用[React Router](https://reacttraining.com/react-router/)和 React.lazy 来设置基于路由的代码分割到你的应用。
+
+```jsx
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+
+const Home = lazy(() => import("./routes/Home"));
+const About = lazy(() => import("./routes/About"));
+
+const App = () => (
+  <Router>
+    <Suspense fallback={<div>Loading...</div>}>
+      <Switch>
+        <Route exact path="/" component={Home} />
+        <Route path="/about" component={About} />
+      </Switch>
+    </Suspense>
+  </Router>
+);
+```
+
+#### 命名导出
+
+React.lazy 当前支持默认导出。如果这个模块你想要使用命名导出，你可以创建一个中间模块重新将它作为默认导出。它能保证 tree shaking 正常工作，并且不会引入未使用的代码。
+
+```jsx
+// ManyComponents.js
+export const MyComponent = /* ... */;
+export const MyUnusedComponent = /* ... */;
+```
+
+```jsx
+// MyComponent.js
+export { MyComponent as default } from "./ManyComponents.js";
+```
+
+```jsx
+// MyApp.js
+import React, { lazy } from "react";
+const MyComponent = lazy(() => import("./MyComponent.js"));
+```
+
 ### Context
 
 #### 什么时机使用 Context
@@ -318,7 +515,7 @@ class Columns extends React.Component {
 function Glossary(props) {
   return (
     <dl>
-      {props.items.map(item => (
+      {props.items.map((item) => (
         // 没有Key,React会触发key的警告
         <React.Fragment key={item.id}>
           <dt>{item.term}</dt>
@@ -629,7 +826,7 @@ class CustomTextInput extends React.Component {
 
     this.textInput = null;
 
-    this.setTextInputRef = element => {
+    this.setTextInputRef = (element) => {
       this.textInput = element;
     };
 
@@ -676,7 +873,7 @@ function CustomTextInput(props) {
 
 class Parent extends React.Component {
   render() {
-    return <CustomTextInput inputRef={el => (this.inputElement = el)} />;
+    return <CustomTextInput inputRef={(el) => (this.inputElement = el)} />;
   }
 }
 ```
