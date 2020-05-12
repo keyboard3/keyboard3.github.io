@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-05-12 11:31:10
 password:
 summary:
-tags: [android, guide, ui]
+tags: [android, guide, ui, 翻译, 进行中]
 categories:
 ---
 
