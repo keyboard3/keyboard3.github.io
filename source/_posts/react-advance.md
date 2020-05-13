@@ -216,11 +216,472 @@ const MyComponent = lazy(() => import("./MyComponent.js"));
 
 ### Context
 
+> Context 提供了通过组件树传递数据的方式，不需要手动在各个 level 手动向下传递 props。
+
+在典型的 React 应用中，数据是通过 props 从上自下传递的（父亲传递给孩子），但是对于应用中的许多组件的 props(比如，本地偏好，UI 主题)需要确定类型，可能会很麻烦。Context 提供了在组件之间共享值的方式，不需要显式的在树结构的每个 level 上传递 props。
+
 #### 什么时机使用 Context
+
+Context 被设计共享那些 React 组件树种被认为是”global“的数据，例如当前经过身份认证的用户，主题，或者语言偏好。例如，下面的代码我们手动通过主题穿线为 Button 组件设置样式。
+
+```jsx
+class App extends React.Component {
+  render() {
+    return <Toolbar theme="dark" />;
+  }
+}
+
+function Toolbar(props) {
+  // Toolbar组件一定要获取theme prop，并且传递它到ThemeButton。它很有用
+  // 如果应用中的每个Button都需要知道theme。因为它需要给所有组件都要传递theme
+  return (
+    <div>
+      <ThemedButton theme={props.theme} />
+    </div>
+  );
+}
+
+class ThemedButton extends React.Component {
+  render() {
+    return <Button theme={this.props.theme} />;
+  }
+}
+```
+
+使用 context，我们可以避免通过中间元素传递 props。
+
+```jsx
+// 上下文让我们将值传递到组件树深处
+// 不需要显式的串联每个组件
+// 为当前主题创建上下文 (默认使用light).
+const ThemeContext = React.createContext("light");
+
+class App extends React.Component {
+  render() {
+    // 下面使用Provider传递当前的主题到组件树中
+    // 任何组件都可以读到，不要关心组件树有多深
+    // 在这个例子中，我们将传递dark作为当前值
+    return (
+      <ThemeContext.Provider value="dark">
+        <Toolbar />
+      </ThemeContext.Provider>
+    );
+  }
+}
+
+// 中间的组件不在需要显式的向下传递theme
+function Toolbar() {
+  return (
+    <div>
+      <ThemedButton />
+    </div>
+  );
+}
+
+class ThemedButton extends React.Component {
+  // 分配一个contextType去读当前主题的context.
+  // React将找到最近的主题provider，然后使用这个值
+  // 在这个例子中，当前主题是dark
+  static contextType = ThemeContext;
+  render() {
+    return <Button theme={this.context} />;
+  }
+}
+```
 
 #### 在使用 Context 之前
 
+Context 主要用于需要嵌套在不同层级的组件都可以访问的一些数据。要谨慎的使用它，因为它会使得组件复用更加困难。
+
+**如果你只想避免给许多层级传递相同的 props，[组件组合](https://reactjs.org/docs/composition-vs-inheritance.html)相较于 Context 是一个常用的简单解决方案**
+
+举例，思考 Page 组件向下穿透几个层级传递 user 和 avatarSize 属性，让深层次的 Link 和 Avatar 组件可以读到它：
+
+```jsx
+<Page user={user} avatarSize={avatarSize} />
+// ... which renders ...
+<PageLayout user={user} avatarSize={avatarSize} />
+// ... which renders ...
+<NavigationBar user={user} avatarSize={avatarSize} />
+// ... which renders ...
+<Link href={user.permalink}>
+  <Avatar user={user} size={avatarSize} />
+</Link>
+```
+
+如果只有最后的 Avatar 组件读，可能会觉得通过许多中间层次的向下传递 user 和 avatarSize 有些多余。当 Avatar 组件需要从顶部中获得更多的属性时就非常烦人了，你必须在所有中间层中添加它们。
+
+一种不带 context 的解决这个问题的方法是[向下传递 Avatar 组件自己](https://reactjs.org/docs/composition-vs-inheritance.html#containment)，所以中间层级组件不需要知道 user 或者 avatarSize 属性。
+
+```jsx
+function Page(props) {
+  const user = props.user;
+  const userLink = (
+    <Link href={user.permalink}>
+      <Avatar user={user} size={props.avatarSize} />
+    </Link>
+  );
+  return <PageLayout userLink={userLink} />;
+}
+
+// Now, we have:
+<Page user={user} avatarSize={avatarSize} />
+// ... which renders ...
+<PageLayout userLink={...} />
+// ... which renders ...
+<NavigationBar userLink={...} />
+// ... which renders ...
+{props.userLink}
+```
+
+随着这次改变，只有顶层的 Page 组件需要知道 Link 和 Avatar 组件使用 user 和 avatarSize 属性。
+
+在许多情况下，通过减少应用需要传递的 props 以及让顶层组件有更多的控制力，这种倒置的控制可以让你的代码清晰。然而它不是每种情况下正确的选择：将树中复杂度提高会使得更高级别组件变得更加复杂，并且会强制低级别组件变得比你想象的还要灵活。
+
+你不仅可以给组件传递单个 child。你可能要传递多个 children，或者给子组件提供多个单独的”插槽“，[如下所示](https://reactjs.org/docs/composition-vs-inheritance.html#containment)
+
+```jsx
+function Page(props) {
+  const user = props.user;
+  const content = <Feed user={user} />;
+  const topBar = (
+    <NavigationBar>
+      <Link href={user.permalink}>
+        <Avatar user={user} size={props.avatarSize} />
+      </Link>
+    </NavigationBar>
+  );
+  return <PageLayout topBar={topBar} content={content} />;
+}
+```
+
+在多数情况下，当你需要从它的中间父亲中解耦出 child，这种模式足够了。如果 child 需要在渲染之前和父组件交流，可以使用[render props](https://reactjs.org/docs/render-props.html)进一步完善它。
+
+但是，有时候一些数据需要被树中许多组件访问，且嵌套在不同的层级中。Context 让你可以”广播“这种数据及其更改到下面的所有组件。使用 context 常见的案例包括管理当前的 local,theme，或者一些缓存数据，这比替代方案要简单的多。
+
 #### API
+
+##### React.createContext
+
+```js
+const MyContext = React.createContext(defaultValue);
+```
+
+创建一个 Context 对象。当 React 渲染一个订阅该 Context 对象的组件时将从树中它的上面最近匹配的 Provider 读取值。
+
+这个 defaultValue 参数只有当组件没有在树中它的上级匹配到 provider 时使用。不用 Provider 包装，有助于隔离测试。注意：给 Provider 的 value 传递 undefined 时， 消费组件不会使用 defaultValue。
+
+##### Context.Provider
+
+```jsx
+<MyContext.Provider value={/* some value */}>
+```
+
+每个 Context 对象都带有一个 ProviderReact 组件，它允许消费组件去订阅 context 变化。
+
+接受 value 属性传递给当前 Provider 的后代消费组件。一个 Provider 可以连接多个消费组件。Providers 可以嵌套，深层的会覆盖上层的。
+
+Provider 的 value 属性变化，它的的所有后代消费组件都重新渲染。Provider 传递给它的后代消费者的传播不是订阅自 shouldComponentUpdate 方法，所以即使当消费组件的祖先组件跳过一个更新时，它仍然会根据这个传播来更新。
+
+更改的依据对比新值和旧值的方式使用了同样的算法,[Object.is](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is#Description)
+
+> 注意：
+> 当传递 value 是对象时，它的变更会带来一些问题：看[注意事项](https://reactjs.org/docs/context.html#caveats)
+
+##### Class.contextType
+
+```jsx
+class MyClass extends React.Component {
+  componentDidMount() {
+    let value = this.context;
+    /* 使用MyContext的值在挂载组件之后做一些副作用操作 */
+  }
+  componentDidUpdate() {
+    let value = this.context;
+    /* ... */
+  }
+  componentWillUnmount() {
+    let value = this.context;
+    /* ... */
+  }
+  render() {
+    let value = this.context;
+    /* 根据 MyContext的值进行渲染 */
+  }
+}
+MyClass.contextType = MyContext;
+```
+
+在 Class 上的 ContextType 属性可以分配由[React.createContext()](https://reactjs.org/docs/context.html#reactcreatecontext)创建的 Context 对象。它让你使用 this.context 来消费这个 Context Type 最近的值。在在任何生命周期函数中引用它，包括渲染方法。
+
+> 注意：
+> 你只能使用这个 API 订阅单个 context。如果你需要了解更多读[消费多个 Context](https://reactjs.org/docs/context.html#consuming-multiple-contexts)。
+
+> 如果你使用实验性的[public class fields syntax](https://babeljs.io/docs/plugins/transform-class-properties/),你可以使用 static 类字段来初始化你的 contextType。
+
+```jsx
+class MyClass extends React.Component {
+  static contextType = MyContext;
+  render() {
+    let value = this.context;
+    /* 根据这个值来渲染 */
+  }
+}
+```
+
+##### Context.Consumer
+
+```jsx
+<MyContext.Consumer>
+  {value => /* 根据这个值来渲染东西 */}
+</MyContext.Consumer>
+```
+
+订阅 context 变化的 React 组件。让让你用函数组件订阅一个 context。
+
+要求一个[函数作为 child](https://reactjs.org/docs/render-props.html#using-props-other-than-render)。这个函数接受当前 context 并返回 React node。这个传递给函数的 value 参数等于树结构中上面最近的 Provider 提供的 Context。如果没有找到匹配的 Provider，这个 value 参数就等于默认传递给 createContext()的 defaultValue。
+
+> 注意：
+> 关于‘函数作为 child’模式的更多信息，看[render props](https://reactjs.org/docs/render-props.html)
+
+##### Context.displayName
+
+Context 对象接受 displayName 字符串属性。React DevTools 使用这个字符串决定 context 显示的什么。
+
+举例，下面的组件将在 DevTools 中显示 MyDisplayName：
+
+```jsx
+const MyContext = React.createContext(/* some value */);
+MyContext.displayName = 'MyDisplayName';
+
+<MyContext.Provider> // "MyDisplayName.Provider" in DevTools
+<MyContext.Consumer> // "MyDisplayName.Consumer" in DevTools
+```
+
+#### 实例
+
+##### 动态 Context
+
+带主题动态值的复杂实例
+**theme-context.js**
+
+```jsx
+export const themes = {
+  light: {
+    foreground: "#000000",
+    background: "#eeeeee",
+  },
+  dark: {
+    foreground: "#ffffff",
+    background: "#222222",
+  },
+};
+
+export const ThemeContext = React.createContext(
+  themes.dark // default value
+);
+```
+
+**themed-button.js**
+
+```jsx
+import { ThemeContext } from "./theme-context";
+
+class ThemedButton extends React.Component {
+  render() {
+    let props = this.props;
+    let theme = this.context;
+    return <button {...props} style={{ backgroundColor: theme.background }} />;
+  }
+}
+ThemedButton.contextType = ThemeContext;
+
+export default ThemedButton;
+```
+
+**app.js**
+
+```jsx
+import { ThemeContext, themes } from "./theme-context";
+import ThemedButton from "./themed-button";
+
+// An intermediate component that uses the ThemedButton
+function Toolbar(props) {
+  return <ThemedButton onClick={props.changeTheme}>Change Theme</ThemedButton>;
+}
+
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      theme: themes.light,
+    };
+
+    this.toggleTheme = () => {
+      this.setState((state) => ({
+        theme: state.theme === themes.dark ? themes.light : themes.dark,
+      }));
+    };
+  }
+
+  render() {
+    // The ThemedButton button inside the ThemeProvider
+    // uses the theme from state while the one outside uses
+    // the default dark theme
+    return (
+      <Page>
+        <ThemeContext.Provider value={this.state.theme}>
+          <Toolbar changeTheme={this.toggleTheme} />
+        </ThemeContext.Provider>
+        <Section>
+          <ThemedButton />
+        </Section>
+      </Page>
+    );
+  }
+}
+```
+
+##### 从嵌套组件中更新 Context
+
+经常需要在组件树嵌套很深的组件中更新 context。这种情况你可以传递个函数给 context，允许消费组件去更新 context。
+**theme-context.js**
+
+```jsx
+// Make sure the shape of the default value passed to
+// createContext matches the shape that the consumers expect!
+export const ThemeContext = React.createContext({
+  theme: themes.dark,
+  toggleTheme: () => {},
+});
+```
+
+**theme-toggler-button.js**
+
+```jsx
+import { ThemeContext } from "./theme-context";
+
+function ThemeTogglerButton() {
+  // The Theme Toggler Button receives not only the theme
+  // but also a toggleTheme function from the context
+  return (
+    <ThemeContext.Consumer>
+      {({ theme, toggleTheme }) => (
+        <button
+          onClick={toggleTheme}
+          style={{ backgroundColor: theme.background }}
+        >
+          Toggle Theme
+        </button>
+      )}
+    </ThemeContext.Consumer>
+  );
+}
+
+export default ThemeTogglerButton;
+```
+
+**app.js**
+
+```jsx
+import { ThemeContext, themes } from "./theme-context";
+import ThemeTogglerButton from "./theme-toggler-button";
+
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.toggleTheme = () => {
+      this.setState((state) => ({
+        theme: state.theme === themes.dark ? themes.light : themes.dark,
+      }));
+    };
+
+    // State also contains the updater function so it will
+    // be passed down into the context provider
+    this.state = {
+      theme: themes.light,
+      toggleTheme: this.toggleTheme,
+    };
+  }
+
+  render() {
+    // The entire state is passed to the provider
+    return (
+      <ThemeContext.Provider value={this.state}>
+        <Content />
+      </ThemeContext.Provider>
+    );
+  }
+}
+
+function Content() {
+  return (
+    <div>
+      <ThemeTogglerButton />
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.root);
+```
+
+##### 消费多个 Contexts
+
+为了让 context 重新渲染更快，React 需要让每个 context 消费者树中是一个单独的节点。
+
+```jsx
+// Theme context, default to light theme
+const ThemeContext = React.createContext("light");
+
+// Signed-in user context
+const UserContext = React.createContext({
+  name: "Guest",
+});
+
+class App extends React.Component {
+  render() {
+    const { signedInUser, theme } = this.props;
+
+    // App component that provides initial context values
+    return (
+      <ThemeContext.Provider value={theme}>
+        <UserContext.Provider value={signedInUser}>
+          <Layout />
+        </UserContext.Provider>
+      </ThemeContext.Provider>
+    );
+  }
+}
+
+function Layout() {
+  return (
+    <div>
+      <Sidebar />
+      <Content />
+    </div>
+  );
+}
+
+// A component may consume multiple contexts
+function Content() {
+  return (
+    <ThemeContext.Consumer>
+      {(theme) => (
+        <UserContext.Consumer>
+          {(user) => <ProfilePage user={user} theme={theme} />}
+        </UserContext.Consumer>
+      )}
+    </ThemeContext.Consumer>
+  );
+}
+```
+
+如果你需要一起使用多个 context 值，你可能想要考虑创建自己的 render prop 组件提供它们。
+
+#### 注意事项
+
+#### 旧版 API
 
 ### Error Boundaries
 
