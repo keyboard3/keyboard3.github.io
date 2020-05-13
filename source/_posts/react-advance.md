@@ -723,6 +723,98 @@ class App extends React.Component {
 
 ### Error Boundaries
 
+> 在过去, 在组件内部的 JavaScript 通常会破坏 React 内部状态并在下一个渲染造成隐秘的错误。这些错误通常由早期的应用代码造成的，但是 React 没有提供在组件中逐渐的处理它们，并且无法从这种状态下恢复。
+
+#### 介绍错误边界
+
+UI 的部分 JavaScript 错误不应该破坏整个应用。为 React 用户解决这个问题，React16 介绍了一个新的概念“错误边界”。
+
+错误边界是 React 组件，可以**捕获任何在它子组件树下发生的 JavaScript 错误，打印它们的日志，并显示一个备份 UI**替换崩溃的组件树。错误边界捕获在渲染期间，生命周期方法，以及整个树结构中的构造函数等的错误。
+
+> 注意
+> 错误边界不捕获这些错误
+
+- 事件处理器([学习更多](https://reactjs.org/docs/error-boundaries.html#how-about-event-handlers))
+- 异步代码(比如 setTimeout 或者 requestAnimationFrame 回调)
+- 服务端渲染
+- 错误边界自己抛出的错误（而不是它的子组件）
+
+如果在 class 组件中定义了[static getDerivedStateFromError()](https://reactjs.org/docs/react-component.html#static-getderivedstatefromerror)或者[componentDidCatch()](https://reactjs.org/docs/react-component.html#componentdidcatch)生命周期函数，这个组件就会变成错误边界。使用 static getDerivedStateFromError()在一次抛出之后渲染备份 UI。使用 componentDidCatch()来打印错误信息。
+
+```jsx
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    // 更新状态所以下一个渲染将会渲染备份UI
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // 你可以将打印错误上报到服务器
+    logErrorToMyService(error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // 你可以渲染备份UI
+      return <h1>Something went wrong.</h1>;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+然后你可以将它作为一个常规的组件使用：
+
+```jsx
+<ErrorBoundary>
+  <MyWidget />
+</ErrorBoundary>
+```
+
+错误边界像 JavaScript 的 catch{}块，但是用于组件。只有 class 组件可以作为错误边界。实践中，大多数情况你只想声明一次错误边界来捕获整个应用。
+
+注意**错误边界只捕获这个组件树节点之下抛出的异常**。错误边界无法捕获自身的错误。如果错误边界在渲染错误消息的时候失败，这个错误会向上传播到最近的错误边界。这根在 JavaScript 的 catch 块工作一样。
+
+#### Live Demo
+
+检查[React 16](https://reactjs.org/blog/2017/09/26/react-v16.0.html)下[声明和使用错误边界的案例](https://codepen.io/gaearon/pen/wqvxGa?editors=0010)
+
+#### 哪里放置错误边界
+
+错误边界的粒度取决与你。你可以路由组件的顶层包装去给用户显示“遇到一些错误”，就像服务端框架经常遇到的崩溃。你可以将单个组件包装到错误边界内，不让它们崩溃应用程序的其余部分。
+
+#### 未捕获错误的新行为
+
+这个改动有一个重要的影响。**从 React16 开始，未被错误边界捕获的错误将造成整个 React 应用树卸载**
+
+我们对这个决定做了辩论，但是根据我们的经验，将损坏的 UI 留着比完整删除它更糟糕。举例，在 Messenger 这样的产品保留损坏的 UI 显示会导致某人发送消息给错误的人。同样，对于付费应用来说显示错误的金额要比什么都不显示更糟糕。
+
+这个改动意味着你迁移到 React16 之后，你将发现你应用中未覆盖之前已经存在的错误。添加错误边界让你当错误发生时为用户提供更加友好的体验。
+
+例如，FaceBook Messenger 将侧边内容，信息面板，对华人之和消息输入包装到单独的错误边界中。如果这些 UI 组件之中发生崩溃，剩余的部分仍然保持交互。
+
+我们还鼓励你使用 JS 错误上报服务，让你可以了解更多在生产中未处理的异常，然后修掉它们。
+
+#### 组件堆栈跟踪
+
+React 16 在开发环境下像控制台打印在渲染期间遇到的所有错误，即使应用意外的吞噬了它们。除了错误消息和 JavaScript 堆栈，它也提供组件堆栈的跟踪。现在你可以发现发生错误在组件树中确切的位置。
+![](https://reactjs.org/static/f1276837b03821b43358d44c14072945/c3a47/error-boundaries-stack-trace.png)
+你也可以看到在组件堆栈中文件名和确切的行号。默认情况下，在[Create React App](https://github.com/facebookincubator/create-react-app)项目中有效。
+![](https://reactjs.org/static/45611d4fdbd152829b28ae2348d6dcba/6dd26/error-boundaries-stack-trace-line-numbers.png)
+如果你没有使用 Create React App，你可以手动在你的 Babel 配置中添加[这个插件](https://www.npmjs.com/package/babel-plugin-transform-react-jsx-source)。注意它仅用于开发，必须在生产中禁止。
+
+> 注意
+> ...
+
+#### 使用 try/catch 如何？
+...
+
 ### Forwarding Refs
 
 Ref 转发是自动通过组件传递 ref 给它的子组件的一个技巧。它在应用中大多数组件是不需要使用的。但是，对于某些组件是需要的，尤其是重复使用的组件库。常见的场景描述如下。
