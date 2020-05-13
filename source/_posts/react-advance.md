@@ -681,7 +681,45 @@ function Content() {
 
 #### 注意事项
 
+因为 context 使用引用来确认什么时候重新渲染，当 Provider 的父亲重新渲染时会触发一些意外的消费者渲染。举例，下面代码在每次 Provider 重新渲染都会触发所有消费者重新渲染，因为 value 一直创建的是一个新对象。
+
+```jsx
+class App extends React.Component {
+  render() {
+    return (
+      <MyContext.Provider value={{ something: "something" }}>
+        <Toolbar />
+      </MyContext.Provider>
+    );
+  }
+}
+```
+
+为了解决这个问题，提升值为父组件的状态：
+
+```jsx
+class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: { something: "something" },
+    };
+  }
+
+  render() {
+    return (
+      <Provider value={this.state.value}>
+        <Toolbar />
+      </Provider>
+    );
+  }
+}
+```
+
 #### 旧版 API
+
+> 注意：
+> React 之前准备了一个实验性 context API。这个旧 API 将支持所有 16.x 版本，但是应用使用它应该迁移到新版本。这个旧版本 API 将在未来主要 React 版本中删除。React 的[旧 context 文档在这](https://reactjs.org/docs/legacy-context.html)
 
 ### Error Boundaries
 
