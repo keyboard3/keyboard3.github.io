@@ -11,6 +11,8 @@ tags: [react, docs, 翻译, 进行中]
 categories:
 ---
 
+[原文](https://reactjs.org/docs/accessibility.html)
+
 ## 高级指南
 
 ### Accessibility
@@ -810,10 +812,68 @@ React 16 在开发环境下像控制台打印在渲染期间遇到的所有错�
 如果你没有使用 Create React App，你可以手动在你的 Babel 配置中添加[这个插件](https://www.npmjs.com/package/babel-plugin-transform-react-jsx-source)。注意它仅用于开发，必须在生产中禁止。
 
 > 注意
-> ...
+> 堆栈中的组件命名显示依赖于[Function.name](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/name)属性。如果你支持还没有提供此特性的旧浏览器和设备(比如，IE11), 考虑在应用包中包含 Function.name 的 polyfill，像[function.name-polyfill](https://github.com/JamesMGreene/Function.name)。或者，你可以显示的在你所有组件上设置[displayName](https://reactjs.org/docs/react-component.html#displayname)。
 
 #### 使用 try/catch 如何？
-...
+
+try/catch 很好，但是只针对命令式代码生效：
+
+```jsx
+try {
+  showButton();
+} catch (error) {
+  // ...
+}
+```
+
+但是，React 组件是声明式的，指定应该显示什么：
+
+```jsx
+<Button />
+```
+
+错误边界保留了 React 的声明特性，表现如您所愿。举例，即使由树深处某个地方 setState 引起了 componentDidUpdate 方法发生错误，它仍将正确的传播到最近的错误边界。
+
+#### 在事件处理器中如何表现？
+
+错误边界不会去捕获在事件处理器中的异常。
+
+React 不需要错误边界去覆盖在事件处理器中的异常。不像渲染方法和生命周期，这个事件处理器不会发生在渲染期间。所以如果它们抛出，React 仍然知道屏幕上渲染什么。
+
+如果你需要在事件处理器中捕获错误，使用常规的 JavaScript try/catch 语句：
+
+```jsx
+class MyComponent extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+    this.handleClick = this.handleClick.bind(this);
+  }
+
+  handleClick() {
+    try {
+      // Do something that could throw
+    } catch (error) {
+      this.setState({ error });
+    }
+  }
+
+  render() {
+    if (this.state.error) {
+      return <h1>Caught an error.</h1>;
+    }
+    return <button onClick={this.handleClick}>Click Me</button>;
+  }
+}
+```
+
+注意上面的案例演示了常规 JavaScript 的行为，没有使用错误边界。
+
+#### 从 React 15 开始命名更改
+
+React 15 用一个不同的名字 unstable_handleError 下对错误边界很有限。这个方法从 16 beta 版本开始就不在工作，你需要把它放到 componentDidCatch 中。
+
+对于这个更改，我们提供了[codemod](https://github.com/reactjs/react-codemod#error-boundaries)来自动迁移你的代码。
 
 ### Forwarding Refs
 
