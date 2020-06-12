@@ -1,5 +1,5 @@
 ---
-title: 了解 amp
+title: amp教程
 top: false
 cover: false
 toc: true
@@ -410,3 +410,150 @@ The tag 'img' may only appear as a descendant of tag 'noscript'. Did you mean 'a
 ```
 
 这是需要理解的重要错误。一些 HTML 标签不允许出现在 AMP 文档中。在某些情况下，AMP 要求你使用其他来替换。我们叫一些自定义非 HTML 标签的标签为”组件“，并且我们将稍后在本训练的下一节来讨论它们。
+
+## 组件思考
+
+### 添加功能给我们的网站
+
+到目前为止，我们将基础的 HTML 网站转化成了基础的 AMP 网站。目前我们的网站上仍有一个错误，我们将使用`<amp-img>`组件来替换`<img>`标签来修复这个错误。解决最后一个验证问题之后，我们将学习到上面是 AMP 组件，为什么某些 HTML 标签在 AMP 中被替换或禁止，以及如何为我们的网站中添加组件。
+
+之后，是时候向我们的网站上添加额外的功能了。为了完成 Chico 的奶酪自行车首页的初始版本，我们将添加一些额外的营销内容。团队决定添加一个关于如何制作奶酪自行车的 YouTube 视频，一个各种奶酪自行车产品的图片轮播以及一些社交媒体链接，帮助用户分享我们的网站到它们喜欢的社交网络上。
+
+看起来这么快的向我们的网站上添加这么多内容令人害怕。我们应该创建 HTML，CSS 和 JavaScript 来满足我们想要添加功能的要求（例如如何更改轮播图的滑动）。然后，我们来考虑如何提升整个站点的性能。
+
+但是这是 AMP 之美。使用 AMP，我们不需要担心所有这些细节！AMP 库作者为我们提供了这些功能的插入构建块，并关心质量像性能、可访问性和安全。这些块本称之为组件，它们是 AMP 成功的关键。
+
+### 什么是 Web 组件？
+
+组件是构建 Web 的块。它们代表结构（HTML）、样式（CSS）和行为（JavaScript）的组合，并具有很容易在自己网站中使用和与其他人分享的接口。组件有如下特征：
+
+- 一个名字(如`<amp-img>`)，如 tag 名一样来确定一个组件
+- 自定义属性，可以改变行为，样式，或者组件内容（如 width,height,src 和 attribution）
+- 事件，可以捕获组件的用户输入（属性 on）
+
+可选的，组件也有"children"。在这里,"children"引用了内容(像文本，HTML 标签或者其他组件)被放置在组件的打开和闭合标签之间。这些 children 的显示内容因每个组件不同而不一样。
+
+AMP 组件系统让你用最小的努力帮助你快速的构建高效且响应迅速的功能到页面上。这个组件库提供了一个完整的组件列表给你使用。有用于构建表单和轮播图的组件，用于集成页面分析，用于向服务器发送 XHR 请求的组件，等等。扩展性几乎是无限的。你可以在 AMP 组件参考[这里](https://amp.dev/zh_cn/documentation/components/?format=websites)看到完整的组件列表。
+
+举例，这里是我们网站时使用的 3 个 AMP 组件：
+| AMP component | How it renders on our site |  
+| ---- | ----- |
+| `<amp-img src="IMG-URL" layout="responsive" width="640" height="480"></amp-img>` | ![](https://amp.dev/static/img/courses/beginner/image14.png?width=1000&hash=1b27ffdd511e8550ae8920116b236cdf74c50bd0) |
+
+|`<amp-twitter width="486" height="657" layout="responsive" data-tweetid="ID"></amp-twitter>`|![](https://amp.dev/static/img/courses/beginner/image19.png?width=1000&hash=af27220195f943de1cd2b4815e76acf8ed7dd045) |
+|`<amp-youtube data-videoid="ID" layout="responsive" width="480" height="270"></amp-youtube>`|![](https://amp.dev/static/img/courses/beginner/image15.png?width=1000&hash=8b870c5a1cfb74d64993f9841a08814e7eac0fc3) |
+
+建立 AMP 站点的目的是尽可能的使用 AMP 组件。组件使得构建的 AMP 的性能优势最大化，因为你不需要创建已有的组件，从而利用 AMP 库作者的工作。
+
+几乎所有的 AMP 组件都由至少一些 JavaScript 运行。对于某些 AMP 组件(如`<amp-img>`)，这个 JavaScript 直接内置到了 AMP 运行时脚本中，该脚本包含在页面的样式代码的顶部。对于大多数 AMP 组件，你需要包含单独的 script 标签。一个充分的理由是：你只包含你网站上真正需要的脚本。然后，用户只需要下载浏览页面所需要的代码。越少的代码下载意味着你的网站加载更快。
+
+### 练习 3：我们的第一个组件-<amp-img>
+
+大多数 HTML 标签可以被直接在 AMP 中使用，像`<img>`标签，一定要替换成等效的 AMP 组件。这些组件结合了可访问性，响应能力和性能的内置最佳实践。
+
+例如，在`<amp-img>`的情况下，AMP 要求我们去指定图片的尺寸。AMP 需要在资源(如 images)加载之前知道页面的布局。它可以提高在页面正在加载，图片资源还没有下载完成之前的用户体验。当图片下载完，可以将它插入到页面而不会造成页面上已存在的内容四处移动。它给 AMP 运行时空间去决定根据用户设备的能力和网络连接情况何时去加载网络图片资源。
+
+要使用该组件来解决早起的`<amp-img>`验证错误，用 AMP 等效组件来替换页面中已存在的 img 标签。注意：编写`<amp-img ...>`而不是`<img ...>`需要给你的图片指定尺寸。给图片一个宽 640，高 480。
+
+如果需要，[参考](https://amp.dev/zh_cn/documentation/components/amp-img/?format=websites)这里的`<amp-img>`文档。
+
+#### 解决方案
+
+页面中包含的图片部分应该如下所示：
+
+```html
+<amp-img
+  src="https://cdn.glitch.com/d7f46a57-0ca4-4cca-ab0f-69068dec6631%2Fricotta-racer.jpg?1540228217746"
+  width="”640”"
+  height="480"
+></amp-img
+```
+
+### 排列和调整组件大小
+
+下一个我们需要解决的问题是我们页面的外观。你不会在大的桌面显示器上注意到它，但是当我们在移动设备上查看我们的网站时就很容易看到问题所在。
+![自行车的图片超出了屏幕边缘](https://amp.dev/static/img/courses/beginner/image23.png?width=1000&hash=de743706d2eb97cf44b26e9f3945e2657bb88f2f)
+
+我们添加到页面的图片不会缩小以适应更小的屏幕；它会溢出边缘。如果我们没有指定布局图片和调整大小的策略，它将默认按照我们代码中指定的宽高来固定。幸运的是，我们可以使用 AMP 的布局系统来解决这个问题。
+
+我们将给我们的图片指定响应类型的 layout 属性，使其自动根据窗口调整大小来缩放。响应式布局假设图片为父容器的尺寸，同时遵循原始尺寸的长宽比。如果父容器只有 320 像素的宽，图片将维持长宽比并调整成 320*240(而不是 640*480)。
+
+添加 layout 属性到我们的图片。如果正确完成，它看起来像这样：
+
+```html
+<amp-img
+  src="https://cdn.glitch.com/d7f46a57-0ca4-4cca-ab0f-69068dec6631%2Fricotta-racer.jpg?1540228217746"
+  layout="responsive"
+  width="640"
+  height="480"
+></amp-img>
+```
+
+在你完成改动之后，看下你的页面。图片会正确的按照长宽比，响应式的根据屏幕宽度去填充显示。问题解决。
+![纵横比正确的自行车图片](https://amp.dev/static/img/courses/beginner/image26.png?width=1000&hash=c8df8c9c35ded613d440e108b6664d8d724fd9f1)
+
+除了`responsive`之外还有其他布局类型(实际上至少总共有 8 种)。例如，`fixed`布局表明组件永远不会调整分配给它的宽和高。`intrinsic`布局和`responsive`布局类似，除了它具有组件不能超过固有宽高的概念。某些布局只能应用于某些组件上。每个组件的文档将会指定那些布局对它有效。你可以在[这里](https://amp.dev/zh_cn/documentation/guides-and-tutorials/learn/amp-html-layout/layouts_demonstrated/?format=websites)查看看剩下的布局类型。
+
+如果你想成为一个成功的 AMP 开发者，学习如何使用布局系统是关键。所有 AMP 提供的布局系统都可以用纯 CSS 去实现，但是通常它们很复杂或者有复杂的边界情况要求很深入的知识来解决。AMP 简化了过程并暴露一些选项，可以在你 AMP 页面上任何元素上使用。查看[官方文档](https://amp.dev/zh_cn/documentation/guides-and-tutorials/learn/amp-html-layout/?format=websites)学习更多的布局系统知识。
+
+### 练习 4：嵌入视频
+
+下一步，来嵌入 YouTube 视频到我们的文档中。我们的营销团队发布了[这个](https://www.youtube.com/watch?v=BlpMQ7fMCzA)视频，来展示我们正在生产一款奶酪自行车。
+
+使用这份`<amp-youtube>`文档嵌入这个 YouTube 视频放到使用下面设置的`<amp-imp>`组件下：
+
+- 设置视频 id 为`BlpMQ7fMCzA`
+- 使得视频布局`responsive`
+- 注意：不要忘记添加这个脚本到`<head>`中
+
+推荐样式指南：
+
+- 设置元素宽度 480，高度 270
+
+你更改之后，看下页面。你现在应该可以看到 YouTube 视频：
+![页面中YouTube视频的图像](https://amp.dev/static/img/courses/beginner/image18.png?width=1000&hash=42af1c8df34f27b866b35d7bc78c6754762e4de4)
+
+#### 解决方案
+
+```html
+<amp-youtube
+  data-videoid="BlpMQ7fMCzA"
+  layout="responsive"
+  width="480"
+  height="270"
+></amp-youtube>
+```
+
+记住在`<head>`中包含`<amp-youtube>`脚本：
+
+```html
+<script
+  async
+  custom-element="amp-youtube"
+  src="https://cdn.ampproject.org/v0/amp-youtube-0.1.js"
+></script>
+```
+
+## 找到正确的组件
+
+### 导航到 AMP 组件文档
+
+### 练习 5：创建一个图片幻灯片
+
+#### 解决方案
+
+### 发现新组件
+
+### 练习 6：添加社交分享链接
+
+### 解决方案
+
+## 结论和下一步
+
+## 附录
+
+### 解释样板 AMP HTML
+
+### AMP 中的懒加载
+
+### Fixed vs Responsive 布局
