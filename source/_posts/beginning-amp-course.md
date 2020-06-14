@@ -7,7 +7,7 @@ mathjax: true
 date: 2020-06-06 19:51:23
 password:
 summary:
-tags: [amp, 教程, 翻译, 进行中]
+tags: [amp, 教程, 翻译, 完结]
 categories:
 ---
 
@@ -500,7 +500,7 @@ AMP 组件系统让你用最小的努力帮助你快速的构建高效且响应�
 
 下一步，来嵌入 YouTube 视频到我们的文档中。我们的营销团队发布了[这个](https://www.youtube.com/watch?v=BlpMQ7fMCzA)视频，来展示我们正在生产一款奶酪自行车。
 
-使用这份`<amp-youtube>`文档嵌入这个 YouTube 视频放到使用下面设置的`<amp-imp>`组件下：
+使用这份`<amp-youtube>`文档嵌入这个 YouTube 视频放到`<amp-imp>`组件之后：
 
 - 设置视频 id 为`BlpMQ7fMCzA`
 - 使得视频布局`responsive`
@@ -536,24 +536,262 @@ AMP 组件系统让你用最小的努力帮助你快速的构建高效且响应�
 
 ## 找到正确的组件
 
-### 导航到 AMP 组件文档
+### 浏览 AMP 组件文档
+
+到目前为止，我们使用的组件非常简单。对于`<amp-img>`和`<amp-youtube>`通过这篇文档的学习足够了，查看示例，然后复制代码到我们的网站。对于某些组件的高级功能，或者对更复杂的组件，我们将从这篇文档中读取和吸收更多的信息。
+
+为了更高效的开发 AMP 网站，学会如何浏览 AMP 组件文档非常重要。在本系列的每个培训中广泛的练习这个技能。
+
+下一步，我将添加奶酪自行车产品的图片集合供用户去滚动。对此，我们将使用一个图片轮播图组件。轮播图组件是一个包含一组子项的元素，它们滑动起来像幻灯片放映。轮播图的 AMP 实现是`<amp-carousel>`。这个组件不是内置的，所以你需要添加它的脚本到页面的`<head>`中。
+
+当我们查看`<amp-carousel>`的[文档](https://amp.dev/zh_cn/documentation/components/amp-carousel/?format=websites)时，我们将寻找下面问题的答案：
+
+- 这个组件做什么？
+- 我应该如何使用这个组件？
+- 我应该如何使用属性来定制这个组件？
+- 我应该如何改变这个组件的样式？
+- 我们需要引用外部的脚本来启用这个组件吗？
+- 这个组件支持哪些布局类型？
+
+![AMP documentation page fo carousel](https://amp.dev/static/img/courses/beginner/image25.png?width=1750&hash=a70b70e161b20fc05d42dd6afac1f928c28c076b)
+查看`<amp-carousel>`文档的下面各项：
+
+- **描述** - 每个组件文档的顶部是一个简单的介绍。总结了这个组件是什么，以及它存在的理由。
+- **行为 behavior** - 这一节解析了组件是如何实现的。通常提供了示例代码和它的展示效果
+- **列出的属性** - 我们在 web 组件的上一节讨论了自定义属性。它允许我们用某些方式来自定义我们的 AMP 组件。这一节包含了不同属性的列表，它们可能的值，以及这些值控制什么。
+- **样式 styling** - 这一节解释了如何使用 CSS 来改变组件的外观。除了通过标签名和 id 来设置样式，许多组件提供了额外的 CSS 类名，在某些状态下使用它来改变组件的外观。例如，`<amp-carousel>`提供了类`.amp-carousel-button`，允许开发者重新调整改变轮播图滑动的按钮的样式。
+- **要求的脚本标签** - 置于文档的顶部，这个标签需要添加我们网站的顶部让这个正常工作。许多组件都需要这些脚本才能正常工作。
+- **支持的布局类型** - 我们在上一节讨论了[布局](https://amp.dev/zh_cn/documentation/guides-and-tutorials/learn/amp-html-layout/layouts_demonstrated/?format=websites)属性。它控制屏幕上这个元素的显示。这一节解释了那些布局类型对这个组件有效。
+
+几乎所有的 AMP 组件的文档都列出了这些项。让我们来探索其中一个示例的文档：
+
+```html
+<amp-carousel
+  id="carousel-with-preview"
+  width="450"
+  height="300"
+  layout="responsive"
+  type="slides"
+>
+  <amp-img
+    src="images/image1.jpg"
+    width="450"
+    height="300"
+    layout="responsive"
+    alt="apples"
+  ></amp-img>
+  <amp-img
+    src="images/image2.jpg"
+    width="450"
+    height="300"
+    layout="responsive"
+    alt="lemons"
+  ></amp-img>
+  <amp-img
+    src="images/image3.jpg"
+    width="450"
+    height="300"
+    layout="responsive"
+    alt="blueberries"
+  ></amp-img>
+</amp-carousel>
+```
+
+这个轮播图包含了 3 张图片用于提供给用户滑动。这个轮播图组件的实例的属性（id,width,height,layout,和 type）被拆分成 3 组：[所有 HTML 元素共有的属性](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes)(id),[所有 AMP 组件共有的属性](https://amp.dev/zh_cn/documentation/guides-and-tutorials/learn/common_attributes/?format=websites)(width,height,和 layout)，轮播图组件特有的属性(type)。
+
+在`<amp-carousel>`的文档中，我们看到组件有 type 属性。它显示 type 的有效输入包括 slides 和 carousel。
+
+这意味着如果你不指定 type，它的默认值将是 carousel。
+
+许多其他自定义的属性可以被用到`<amp-carousel>`组件上。当第一次使用 AMP 组件时，查看文档以了解通过哪些方式你可以通过这些属性自定义组件的行为和外观。
 
 ### 练习 5：创建一个图片幻灯片
 
+来练习通过这篇文档添加`<amp-carousel>`到我们的项目。添加一个带有下面设置的轮播图到`<p class="main-text">`:
+
+- 给轮播图一个`responsive`的布局
+- 给轮播图 type 设置为 slides
+- 添加三张图片到轮播图：`assets/cheddar-chaser.jpg`,`assets/cheese.jpg`和`assets/mouse.jpg`。
+- 如果用户尝试从最后一张滚动，轮播图图片回到开始
+
+推荐样式指南：
+
+- 给轮播图宽 412 和高 309
+- 给每张图片宽 412 和高度 309
+
+在你做这些改动之后，查看实时页面来检查你的成果。你的页面看起来像这样：
+![The carousel in our page.](https://amp.dev/static/img/courses/beginner/image9.png?width=1000&hash=ac6a95075bd0b8e33800dd14a2d399b0c6d299be)
+
 #### 解决方案
+
+这里是你添加到项目中的代码：
+
+```html
+<amp-carousel layout="responsive" width="412" height="309" type="slides" loop>
+  <amp-img
+    src="https://cdn.glitch.com/d7f46a57-0ca4-4cca-ab0f-69068dec6631%2Fcheddar-chaser.jpg?1540228205366"
+    width="412"
+    height="309"
+    layout="responsive"
+  ></amp-img>
+  <amp-img
+    src="https://cdn.glitch.com/d7f46a57-0ca4-4cca-ab0f-69068dec6631%2Fcheese.jpg?1540228223785"
+    width="412"
+    height="309"
+    layout="responsive"
+  ></amp-img>
+  <amp-img
+    src="https://cdn.glitch.com/d7f46a57-0ca4-4cca-ab0f-69068dec6631%2Fmouse.jpg?1540228223963"
+    width="412"
+    height="309"
+    layout="responsive"
+  ></amp-img>
+</amp-carousel>
+```
+
+记住在`<head>`中引入`<amp-carousel>`组件：
+
+```html
+<script
+  async
+  custom-element="amp-carousel"
+  src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js"
+></script>
+```
 
 ### 发现新组件
 
+当我们继续开发我们的奶酪自行车网站，我们不会一直知道添加我们想要的功能的 AMP 组件的名字。AMP 社区已经生产了大量用于处理不同功能的组件：广告和分析，动态内容，布局，媒体，展示和社会。典型的是当开发一个 AMP 站点给了一些新功能的要求，然后在通过在 AMP 组件的列表中检索出符合要求的组件。
+
+第一种方式发现新 AMP 组件是使用你最喜欢的搜索引擎或者是在 AMP 项目[网站](https://amp.dev/)上使用搜索功能。这种方式适合你已经知道名字直接跳转到组件的文档。另外，你可以搜索你感兴趣的组件描述去找结果。举例，搜索“YouTube 视频”，第一个搜索结果是`<amp-youtube>`。类似，搜索“可折叠内容”，`<amp-accordion>`组件是第一个结果。
+
+另外一种寻找组件的方式是使用[AMP Components Reference](https://amp.dev/zh_cn/documentation/components/?format=websites)页面。它包含了 AMP 支持的组件列表。每个组件的入口包含了组件的名字和这个组件能提供的功能的简单描述。我们可以通过点击它的名字去访问这个组件的文档。正如我们之前学习到的，这个文档将给你对这个组件的行为更深的了解。基于这些信息，我们应该可以决定这个组件是否满足我们的需求或者是否去搜索其他组件。在后面的培训中，我们将讨论如果没有组件符合我们的需求该怎么做。
+![The AMP Component Reference page.](https://amp.dev/static/img/courses/beginner/image3.png?width=1750&hash=76dae16d0d5be7f067c1ba8ca1e20ab3de4b88f1)
+
+最后，我们可能仍然对这些组件如何在我们网站上运作有点疑问，或者我们不清楚在更复杂的场景中如何使用组件。在 amp.dev 上[AMP By Example](https://amp.dev/zh_cn/documentation/examples/?format=websites)的页面展示了许多 AMP 组件，显示了这些组件的各种方式来满足现代网站的用户场景。通常，你可以从组件的文档转到响应的 AMP by Example 页面上。
+![AMP By Example page for the amp-carousel component.](https://amp.dev/static/img/courses/beginner/image7.png?width=1750&hash=de5b63554527c405e24ebf9b5c7696b31770aba3)
+
 ### 练习 6：添加社交分享链接
+
+在现代 web 页面社交媒体链接是很常见的。AMP 提供了一个准备好链接的按钮允许用户通过一次点击来分享你的页面到他的社交媒体上，从而帮你您提供用户的参与度。
+
+使用 AMP 文档，添加按钮到`<amp-youtube>`之后让用户通过一次点击来分享我们的页面。然而，你将需要在[AMP Components Reference](https://amp.dev/zh_cn/documentation/components/?format=websites)上寻找相应的 AMP 组件。（**注意**：这一节的标题应该是帮助你寻找到你想要的组件）。
+
+一旦你定位到正确的的组件，点击组件的名字访问它的文档。使用这个文档添加这样的组件：
+
+- 给用户选项来在下面的平台分享你的页面：Email，LinkedIn，Tumblr，和 Twitter。
+
+推荐样式指南：
+
+- 使用带 social-bar 的样式的 div 包裹 AMP 组件
+- 给每个 AMP 组件设置 width 和 height 为 44
+
+在你完成这个任务之后，你的页面应该包含用户可以分享你页面的按钮：
+![Social media buttons embedded in the page.](https://amp.dev/static/img/courses/beginner/image19.png?width=680&hash=af27220195f943de1cd2b4815e76acf8ed7dd045)
 
 ### 解决方案
 
+```html
+<div class="social-bar">
+  <amp-social-share type="email" width="44" height="44"></amp-social-share>
+  <amp-social-share type="linkedin" width="44" height="44"></amp-social-share>
+  <amp-social-share type="tumblr" width="44" height="44"></amp-social-share>
+  <amp-social-share type="twitter" width="44" height="44"></amp-social-share>
+</div>
+```
+
+记住在`<head>`上引用`<amp-social-share>`脚本
+
+```html
+<script
+  async
+  custom-element="amp-social-share"
+  src="https://cdn.ampproject.org/v0/amp-social-share-0.1.js"
+></script>
+```
+
 ## 结论和下一步
+
+恭喜！你已经完成了 AMP 初学者的课程，并成功创建你的第一个 AMP 页面。
+
+反思一下到目前为止的构建。你已经创建了一个引人入胜的 AMP 网页，有图片，轮播图和视频。想一想我们不需要做的工作，像编写 JavaScript 允许我们跟踪轮播图当前滑动的哪一张，或者计算如何包装我们的轮播图从最后一张滑到第一张。我们没有沉迷于细节和繁琐的工作，而是专注于关注构建出让我们蓬勃发展的奶酪自行车业务更加高效的网站。
+
+正如你课程中所看到的，大多数现代化网站有的功能都有对应的 AMP 组件。就像我们目前所做的那样，我们通常只需要少量的额外代码就可以使用这些组件来构建出完整功能的网站。在这个课程中，你需要学习如何找到并使用 AMP 组件来构建出简单的用户页面。向你介绍了 AMP 的简单和强大和它提供的工具。最后，你学习了 AMP 验证器以及它在启用 AMP 缓存的作用性。在我们下面的课程中，我们将学习如何处理用户输入和事件，如何在 AMP 组件上调用 action 去改变它的状态和外观，如何组合多个 AMP 组件来只做出更加精良的用户页面。我们将继续在 Chico 的奶酪网站上扩大规模，让 Chico 有机会去打动爱好奶酪自行车的人。
+
+[这里](https://aquamarine-baritone.glitch.me/)是今天我们构建的完成版本。
+以下是其他额外话题和链接去探索：
+
+- [AMP By Example](https://amp.dev/zh_cn/documentation/examples/?format=websites)
+- [All about Page Discovery](https://amp.dev/zh_cn/documentation/guides-and-tutorials/optimize-and-measure/discovery/?format=websites)
+- [Disallowed HTML Tags](https://amp.dev/zh_cn/documentation/guides-and-tutorials/learn/spec/amphtml/?format=websites#html-tags)
+- [Restricted CSS Rules & Animations](https://amp.dev/zh_cn/documentation/guides-and-tutorials/develop/style_and_layout/style_pages/?format=websites)
+- [The AMP Boilerplate](https://amp.dev/zh_cn/documentation/guides-and-tutorials/start/create/basic_markup/?format=websites)
+- [List of available AMP Components](https://amp.dev/zh_cn/documentation/components/?format=websites)
 
 ## 附录
 
 ### 解释样板 AMP HTML
 
+#### **<link rel="canonical">标签**
+
+AMP 刚开始时，它仅用于创建用于移动设备的网页。一个网页应该有一个服务于移动设备的 AMP 版本，一个用于桌面设备的常规 HTML 编写的版本（成为“canonical”版本）。你应该使用`<link>`标签来连接这两个版本，让搜索引擎知道这两个文档代表相同的网页。
+
+所以，非 AMP 文档包含 AMP 文档的链接。比如：
+
+```html
+<link rel="amphtml" href="https://www.site.com/amp/document.html" />
+```
+
+并且，AMP 文档包含非 AMP 文档的链接，比如：
+
+```html
+<link rel="canonical" href="https://www.site.com/document.html" />
+```
+
+现在 AMP 功能更加强大，除非你在桌面页面上需要其他功能，在移动和桌面两个设备上使用 AMP 都很简单。这样一来，你只需要维护一个页面而非两个！尽管如此，这个`<link>`仍然需要。这种情况下，你只需要简单的连接页面到自己，比如：
+
+```html
+<link rel="canonical" href="https://www.site.com/amp/document.html" />
+```
+
+在所有设备上都使用一个 AMP 页面被称之为“canonical AMP”。这就是我们为奶酪自行车商店所做的。
+
+#### amp-boilerplate <style> 标签
+
+所有 AMP HTML 页面一定要在`<head>`标签中包含一些默认样式。这个样式会影响到页面外观，直到 AMP 库被完全加载。从本质上讲，它目的是先隐藏内容，直到页面完全准备好，即页面上的所有元素都准备好且 AMP 知道在哪里渲染以及它们将要占多少空间。完成此操作，页面就会淡入。这样，用户可以立刻以最终形式查看页面，使它们感觉页面以及立刻加载完成。
+
+#### 为什么使用视窗`<meta>`标签
+
+AMP 可以在移动和桌面设备上运行。因为用户可能在任何一个设备上运行的你的网页，最好是在开发的时候就在这两个设备上检查你的网页。点击移动手机设备图标就可以在 Chrome DevTools 中模拟移动设备体验：
+![Mobile preview in DevTools](https://amp.dev/static/img/courses/beginner/image5.png?width=470&hash=8bd8fac56020d9cadf3fe022193a08532cb0714e)
+
+现在从菜单中选择“Nexus Fx”移动设备：
+![Select a mobile device](https://amp.dev/static/img/courses/beginner/image1.png?width=390&hash=4c3da386bfacbc8823e930dd9ded686ed4f5115c)
+
+你应该可以看到你浏览器中选择的设备对应页面显示页面的效果：
+![A simulation of how the page looks on mobile](https://amp.dev/static/img/courses/beginner/image11.png?width=470&hash=2980d95ab3572d7d21c381f9bdd4251c036aa04b)
+
+注意内容不应该填充满整个移动设备。这个“viewport”标签可以解决这个问题。这个标签根据给定的屏幕大小缩放页面。由于我们想要 AMP 页面对移动设备优化，并使其变成响应式，不用说 AMP 验证器需要此标签。
+
+所以下面标签一定要放到我们 AMP 页面的`<head>`标签中，将其添加到快捷图标链接下方。
+
+```html
+<meta
+  name="viewport"
+  content="width=device-width,minimum-scale=1,initial-scale=1"
+/>
+```
+
+如果你刷新页面，现在在小屏幕上看起来会好一些，比如这样：
+![Mobile optimized page](https://amp.dev/static/img/courses/beginner/image20.png?width=470&hash=4066d835368fd81e7e1ef796a075bb02b187b1f3)
+除了标题之外，你不会注意到太大的区别。随着我们跟进一步了解缩放的原理，你可以尝试一下。
+
 ### AMP 中的懒加载
 
+“Lazy-loading”意味着资源（图片，数据，视频，脚本等）不是立刻加载，只有在需要的时候才去加载。AMP 下载资源时，它会优化下载，所以以便更重要的资源被首先下载。图片和广告只有在某些条件满足时才下载，如果它们被用户看到，或者用户可能很快速的滑动它们。这些媒体资产的等效组件(`<amp-img>`代替`<img>`)被称为"托管资源"，因为它们是否以及何时将它们加载显示给用户由 AMP 决定。AMP 可以随时决定卸载当前用户看不到的资源。AMP 性能优化之一就是要求元素如`<amp-img>`之类的元素预先声明其高度。有助于帮助 AMP 计算如何最好的方式布局显示。这非常关键，例如，因为 AMP 会预先加载第一视窗的所有资源，即用户访问网站第一眼看到的所有资源。
+
 ### Fixed vs Responsive 布局
+
+页面包含布局系统以保证在浏览器渲染页面之前页面布局尽可能的严格。该系统给我们提供了一个 layout 属性，让我们以各种方式定位和缩放元素 -- 固定尺寸，响应式设计，固定高度等等。布局系统强制某些元素的尺寸声明。
+
+这个布局属性对于大多数元素来说是有效的，它指定了 AMP 组件在页面上的显示方式。两种常见的 layout 属性值是“fixed”和“responsive”。如果元素有固定布局，则宽度和高度一定存在。然后，元素将保持此精确大小（以像素为单位），不用担心屏幕或者视图窗口发生变化。如果元素是响应式布局，同样宽和高也一定存在。这种情况下，虽然，元素将自动调整大小以占用可用空间，维持给定宽高的尺寸比列。可用空间依赖于它的父元素。
