@@ -1198,18 +1198,21 @@ key 是为唯一可以传递给 Fragment 的属性。未来，我们可以添加
 
 ```jsx
 React.createElement(MyButton, { color: "blue", shadowSize: 2 }, "Click Me");
+
 ```
 
 如果它没有子元素可以使用自我闭合的标签形式，所以：
 
 ```jsx
 <div className="sidebar" />
+
 ```
 
 编译结果：
 
 ```jsx
 React.createElement("div", { className: "sidebar" });
+
 ```
 
 如果你想要测试某些具体的 jsx 语法编译成的 js 代码，你可以尝试使用[在线的 Babel 编译器](https://babeljs.io/repl/#?presets=react&code_lz=GYVwdgxgLglg9mABACwKYBt1wBQEpEDeAUIogE6pQhlIA8AJjAG4B8AEhlogO5xnr0AhLQD0jVgG4iAXyJA)
