@@ -198,6 +198,9 @@ push(url: Url, as: Url = url, options = {})
 				? this._getStaticData(dataHref!)
 				: __N_SSP
             		? this._getServerData(dataHref!)
+            			return fetchNextData(dataHref, this.isSsr)
+            				res = await fetch(dataHref, {credentials: 'same-origin',})
+            				return res.json()
             		: this.getInitialProps(Component,{pathname,query,asPath: as,} as any
               	)).then((props) => {
 		          routeInfo.props = props
@@ -209,3 +212,18 @@ push(url: Url, as: Url = url, options = {})
 			return this.notify(data)
 				return this.sub(data, this.components['/_app'].Component)
 ```
+
+## next-i18n 分析
+
+- 服务端：
+  1. 服务端渲染解析出来访用户的语言，然后匹配找到语言的资源文件，
+  2. 解析渲染页面所需要的命名空间，然后选择相应的向 appTree 下注入这个 i18nStore，
+  3. 最后由各组件 withTranslation 选择命名空间，得到相应的字符串。
+- 客户端
+  next 在客户端重建 appTree 的时候，会把该 i18nStore 一同恢复。
+- 缺点
+  当 shallowRender router 跳转的时候，那么新页面的拿不到它所需的命名空间数据。
+- 原因
+  渲染 App 时顺序：1.App 的 getInitialProps 执行 2.page 的 getServerSideProps 执行 3.渲染 App 4.渲染 Component
+  withAppTranslation 包装的组件会包装 App 的 getInitialProps，同时解析出此次请求需要的命名空间，但是这个时候还没有页面 getServerSideProps 的事情，所以需要在 page 页面 class 上时挂属性（例:getInitialProps）拿到响应的命名空间。
+  所以客户端路由的时候，先拿 getServerProps 的数据时是带不上这个页面的 i18n 命名空间的。
